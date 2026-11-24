@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Medicines Catalog – MedConnect{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/medicines.css' %}?v=2.5">
+{% endblock %}
+
+{% block content %}
+<div class="medicines-container">
+
+    <!-- PAGE HEADER WITH SEARCH & FILTER BAR -->
+    <div class="page-top-bar">
+        <div>
+            <h2>Explore Medicines & Healthcare Products</h2>
+            <p>100% genuine medications verified by licensed clinical pharmacists.</p>
+        </div>
+        <div class="results-count-badge">
+            <span class="badge bg-teal">{{ total_count }} Available Medicines</span>
+        </div>
+    </div>
+
+    <!-- FILTER & SEARCH CONTROLS -->
+    <div class="filters-panel card">
+        <form action="{% url 'medicines' %}" method="GET" class="filter-form">
+            <div class="search-input-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" name="q" placeholder="Search by medicine name, brand, or manufacturer..." value="{{ search_query }}">
+            </div>
+
+            <div class="category-select-wrap">
+                <i class="fa-solid fa-filter"></i>
+                <select name="category" onchange="this.form.submit()">
+                    <option value="all">All Healthcare Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.slug }}" {% if selected_category == cat.slug %}selected{% endif %}>
+                        {{ cat.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Filter</button>
+            {% if search_query or selected_category and selected_category != 'all' %}
+            <a href="{% url 'medicines' %}" class="btn btn-outline" title="Clear Filters">Clear</a>
+            {% endif %}
+        </form>
+
+        <!-- Category Filter Quick Pills -->
+        <div class="category-pills-bar">
+            <a href="{% url 'medicines' %}" class="cat-pill {% if not selected_category or selected_category == 'all' %}active{% endif %}">
+                All
+            </a>
+            {% for cat in categories %}
+            <a href="{% url 'medicines' %}?category={{ cat.slug }}" class="cat-pill {% if selected_category == cat.slug %}active{% endif %}">
+                <i class="fa-solid {{ cat.icon }}"></i> {{ cat.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- MEDICINES GRID -->
+    <div class="medicines-grid">
+        {% for med in medicines %}
+        <div class="med-card" id="med-card-{{ med.id }}">
+            <div class="med-image-box">
+                <img src="{{ med.image|default:'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500' }}" alt="{{ med.name }}" loading="lazy">
+                
+                <!-- Wishlist Toggle Heart -->
+                <button class="med-wishlist-btn {% if med.in_wishlist %}active{% endif %}" onclick="toggleWishlist('{{ med.id }}', this)" title="Save to Wishlist">
+                    <i class="fa-solid fa-heart"></i>
+                </button>
+
+                <span class="med-cat-tag">{{ med.category }}</span>
+            </div>
+
+            <div class="med-content">
+                <div class="med-manufacturer"><i class="fa-solid fa-industry"></i> {{ med.manufacturer }}</div>
+                <h4 class="med-name"><a href="{% url 'medicine_detail' med.id %}">{{ med.name }}</a></h4>
+                
+                <!-- Dosage & Delivery Form -->
+                <div class="med-dosage">
+                    <i class="fa-solid fa-pills"></i> <span>Dosage:</span> {{ med.dosage }}
+                </div>
+
+                <div class="med-rating-row">
+                    <span class="rating-stars">
+                        <i class="fa-solid fa-star"></i> {{ med.rating|default:"4.8" }}
+                    </span>
+                    <span class="stock-status in-stock">
+                        <i class="fa-solid fa-check"></i> In Stock ({{ med.stock }})
+                    </span>
+                </div>
+
+                <div class="med-footer">
+                    <div class="med-price-wrap">
+                        <span class="med-price">₹{{ med.price|floatformat:2 }}</span>
+                        {% if med.mrp %}
+                        <span class="med-mrp">₹{{ med.mrp|floatformat:2 }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="med-actions">
+                        <a href="{% url 'medicine_detail' med.id %}" class="btn btn-outline btn-sm" title="View Medicine Details">
+                            Details
+                        </a>
+                        <button class="btn btn-primary btn-sm add-to-cart-btn" onclick="addToCart('{{ med.id }}', this)">
+                            <i class="fa-solid fa-cart-plus"></i> Add
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state-box col-span-full">
+            <div class="empty-icon"><i class="fa-solid fa-capsules"></i></div>
+            <h3>No medicines match your search</h3>
+            <p>We couldn't find any medicine matching "{{ search_query }}". Try checking the spelling or selecting another category.</p>
+            <a href="{% url 'medicines' %}" class="btn btn-primary">View All Medicines</a>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addToCart(medId, btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Adding...';
+    btn.disabled = true;
+
+    fetch('/api/cart/add/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ medicine_id: medId, quantity: 1 })
+    })
+    .then(res => res.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) {
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Added!';
+            btn.classList.add('btn-success');
+            
+            // Update cart badges
+            const badges = document.querySelectorAll('.cart-count-badge');
+            badges.forEach(b => b.textContent = data.cart_count);
+
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('btn-success');
+            }, 1800);
+        } else {
+            alert(data.error || 'Failed to add medicine to cart');
+            btn.innerHTML = originalText;
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        console.error('Error adding to cart:', err);
+    });
+}
+
+function toggleWishlist(medId, btn) {
+    fetch('/api/wishlist/toggle/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ medicine_id: medId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            if (data.in_wishlist) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+            const wishlistBadge = document.getElementById('sidebarWishlistBadge');
+            if (wishlistBadge) wishlistBadge.textContent = data.wishlist_count;
+        }
+    });
+}
+</script>
+{% endblock %}

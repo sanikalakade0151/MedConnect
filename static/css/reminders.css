@@ -1,0 +1,150 @@
+/* ==========================================================================
+   MEDCONNECT – Modern Medicine Reminders (reminders.css)
+   ========================================================================== */
+
+.reminders-grid-layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 1.75rem;
+    align-items: start;
+}
+
+@media (max-width: 992px) {
+    .reminders-grid-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.reminders-stat-badges {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.adherence-card {
+    background: #f0fdfa;
+    border: 1px solid #ccfbf1;
+    padding: 1.25rem;
+    text-align: center;
+}
+
+.adherence-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.adherence-card h5 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+
+.adherence-card p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Reminders List & Cards */
+.reminders-full-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.reminder-card-item {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    background: #ffffff;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    transition: var(--transition);
+}
+
+.reminder-card-item:hover {
+    box-shadow: var(--shadow-sm);
+    border-color: var(--primary);
+}
+
+.reminder-card-item.taken {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.rem-time-badge {
+    background: #ccfbf1;
+    color: #0f766e;
+    font-weight: 800;
+    font-size: 1rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.rem-main-info {
+    flex: 1;
+}
+
+.rem-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.rem-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.rem-cat-tag {
+    background: #f1f5f9;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: var(--radius-full);
+}
+
+.rem-dosage-desc {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+}
+
+.rem-action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.btn-mark-taken {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-full);
+    border: 1.5px solid var(--border-color);
+    background: #ffffff;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-mark-taken:hover {
+    border-color: var(--success);
+    color: var(--success);
+    background: var(--success-light);
+}
+
+.btn-mark-taken.is-taken {
+    background: var(--success);
+    color: #ffffff;
+    border-color: var(--success);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}

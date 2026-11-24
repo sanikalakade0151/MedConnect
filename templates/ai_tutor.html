@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Medical Tutor – MedConnect{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ai-tutor.css' %}?v=2.5">
+{% endblock %}
+
+{% block content %}
+<div class="ai-tutor-page-wrapper">
+
+    <!-- PAGE HEADER -->
+    <div class="page-top-bar">
+        <div>
+            <h2>AI Medical Tutor & Pharmacology Assistant</h2>
+            <p>24/7 intelligent clinical reference for medicine composition, indications, common side effects, and safe usage.</p>
+        </div>
+        <div class="tutor-status-badge">
+            <span class="live-pulse"></span> AI Clinical Engine Online
+        </div>
+    </div>
+
+    <!-- MANDATORY MEDICAL SAFETY WARNING BANNER -->
+    <div class="medical-disclaimer-banner card">
+        <div class="disclaimer-icon text-amber">
+            <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
+        </div>
+        <div class="disclaimer-text">
+            <strong>Mandatory Medical Notice:</strong>
+            MedConnect AI Tutor provides educational information on approved pharmaceuticals and general health guidelines only. It does not formulate medical diagnoses, prescribe treatments, or replace direct consultations with licensed physicians or qualified pharmacists. In case of acute emergencies, call 911 / 112 immediately.
+        </div>
+    </div>
+
+    <!-- CHAT CONTAINER -->
+    <div class="card chat-container-card">
+        
+        <!-- Chat Messages Area -->
+        <div class="chat-messages-area" id="chatMessages">
+            
+            <!-- Welcome AI Bot Message -->
+            <div class="chat-bubble-row bot">
+                <div class="chat-avatar bot-avatar">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <div class="chat-bubble">
+                    <div class="bubble-sender">MedConnect AI Medical Assistant</div>
+                    <div class="bubble-text">
+                        Hello! I am your AI Medical Tutor. You can ask me questions about prescription drugs, standard dosages, potential side effects, or general symptom management.
+                        <br><br>
+                        <em>How can I assist you with your medications today?</em>
+                    </div>
+                    <div class="bubble-disclaimer">
+                        <i class="fa-solid fa-circle-info"></i> Information provided for educational reference only.
+                    </div>
+                    <div class="bubble-time">Just now</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- QUICK PROMPT SUGGESTION CHIPS -->
+        <div class="quick-prompts-bar">
+            <span class="prompts-label"><i class="fa-solid fa-wand-magic-sparkles text-teal"></i> Suggested Questions:</span>
+            <button class="prompt-chip" onclick="askQuickPrompt('Tell me about Paracetamol Advance 650mg uses and dosage')">Paracetamol 650mg</button>
+            <button class="prompt-chip" onclick="askQuickPrompt('How should I take Pan 40 Pantoprazole for acid reflux?')">Pan 40 for Acidity</button>
+            <button class="prompt-chip" onclick="askQuickPrompt('What should I do if I missed a dose of my diabetes medication?')">Missed Dose Advice</button>
+            <button class="prompt-chip" onclick="askQuickPrompt('What are common side effects of Atorvastatin?')">Atorvastatin Guidance</button>
+            <button class="prompt-chip" onclick="askQuickPrompt('How to treat a common cold and mild fever at home?')">Cold & Fever Care</button>
+        </div>
+
+        <!-- CHAT INPUT BAR -->
+        <div class="chat-input-container">
+            <form id="chatForm" onsubmit="handleChatSubmit(event)">
+                <div class="chat-input-wrap">
+                    <input type="text" id="userInput" placeholder="Ask any medicine-related question (e.g., 'Can I take Ibuprofen with food?')..." autocomplete="off">
+                    <button type="submit" id="sendBtn" class="btn btn-primary">
+                        <i class="fa-solid fa-paper-plane"></i> Send
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const chatMessages = document.getElementById('chatMessages');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+
+function getCsrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta && meta.content) return meta.content;
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? match[1] : '';
+}
+
+function askQuickPrompt(question) {
+    if (userInput) {
+        userInput.value = question;
+        submitQuery(question);
+    }
+}
+
+function handleChatSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const query = userInput ? userInput.value.trim() : '';
+    if (!query) return;
+    submitQuery(query);
+}
+
+function submitQuery(query) {
+    if (!query) return;
+
+    // Append User Message
+    appendMessage(query, 'user');
+    if (userInput) userInput.value = '';
+    if (sendBtn) sendBtn.disabled = true;
+
+    // Show Typing Indicator
+    const typingId = showTypingIndicator();
+
+    fetch('/api/ai-tutor/chat/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({ message: query })
+    })
+    .then(res => res.json())
+    .then(data => {
+        removeTypingIndicator(typingId);
+        if (sendBtn) sendBtn.disabled = false;
+
+        if (data.success && data.data) {
+            appendBotMessage(data.data);
+        } else {
+            appendMessage(data.error || 'Unable to process query.', 'bot');
+        }
+    })
+    .catch(err => {
+        removeTypingIndicator(typingId);
+        if (sendBtn) sendBtn.disabled = false;
+        appendMessage('Connection error. Please check your network and try again.', 'bot');
+    });
+}
+
+function appendMessage(text, sender) {
+    const row = document.createElement('div');
+    row.className = `chat-bubble-row ${sender}`;
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (sender === 'user') {
+        row.innerHTML = `
+            <div class="chat-bubble">
+                <div class="bubble-sender">You</div>
+                <div class="bubble-text">${escapeHtml(text)}</div>
+                <div class="bubble-time">${time}</div>
+            </div>
+            <div class="chat-avatar user-avatar"><i class="fa-solid fa-user"></i></div>
+        `;
+    }
+    chatMessages.appendChild(row);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function appendBotMessage(data) {
+    const row = document.createElement('div');
+    row.className = `chat-bubble-row bot`;
+    const isEmerg = data.is_emergency;
+
+    // Format simple markdown into clean HTML
+    let formattedText = data.response
+        .replace(/^### (.*$)/gim, '<h4 class="tutor-heading" style="margin-bottom: 0.5rem; color: #072a2a;">$1</h4>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code style="background: #e6fffa; color: #0d9488; padding: 2px 6px; border-radius: 4px;">$1</code>')
+        .replace(/• (.*$)/gim, '<li style="margin-left: 1.25rem;">$1</li>')
+        .replace(/\n\n/g, '<br><br>');
+
+    let cardHtml = '';
+    if (data.medicine_card) {
+        cardHtml = `
+            <div class="card mt-3 p-3" style="background: #f0fdfa; border: 1.5px solid #0d9488; border-radius: 12px; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.1);">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <strong style="color: #072a2a; font-size: 1rem;"><i class="fa-solid fa-capsules text-teal"></i> ${escapeHtml(data.medicine_card.name)}</strong>
+                    <span class="badge badge-teal" style="font-size: 0.85rem;">₹${parseFloat(data.medicine_card.price || 0).toFixed(2)}</span>
+                </div>
+                <div class="text-muted small mb-2">
+                    ${escapeHtml(data.medicine_card.dosage || 'Prescription dosage')} &bull; ${escapeHtml(data.medicine_card.category || 'General')}
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/medicines/${data.medicine_card.id || ''}" class="btn btn-outline btn-sm">
+                        <i class="fa-solid fa-circle-info"></i> View Medicine
+                    </a>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="addMedCardToCart('${data.medicine_card.id || ''}', this)">
+                        <i class="fa-solid fa-cart-plus"></i> Add to Cart
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    row.innerHTML = `
+        <div class="chat-avatar bot-avatar"><i class="fa-solid fa-robot"></i></div>
+        <div class="chat-bubble ${isEmerg ? 'emergency-bubble' : ''}">
+            <div class="bubble-sender"><i class="fa-solid fa-stethoscope text-teal"></i> ${data.title || 'MedConnect AI Tutor'}</div>
+            <div class="bubble-text">${formattedText}</div>
+            ${cardHtml}
+            <div class="bubble-disclaimer mt-2">
+                <i class="fa-solid fa-triangle-exclamation text-amber"></i> ${data.disclaimer}
+            </div>
+            <div class="bubble-time">${data.timestamp || 'Now'}</div>
+        </div>
+    `;
+    chatMessages.appendChild(row);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function addMedCardToCart(medId, btn) {
+    if (!medId) return;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Adding...';
+
+    fetch('/api/cart/add/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({ medicine_id: medId, quantity: 1 })
+    })
+    .then(res => res.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) {
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Added!';
+            btn.style.background = '#0d9488';
+            btn.style.color = '#ffffff';
+
+            const badge = document.querySelector('.cart-count-badge');
+            if (badge && data.cart_count !== undefined) {
+                badge.textContent = data.cart_count;
+                badge.style.display = data.cart_count > 0 ? 'flex' : 'none';
+            }
+
+            if (typeof showToast === 'function') {
+                showToast('Medicine added to your cart! <a href="/cart/" style="color: #0f766e; text-decoration: underline; font-weight: bold; margin-left: 6px;">View Cart &rarr;</a>', 'success');
+            }
+            setTimeout(() => {
+                btn.style.background = '';
+                btn.style.color = '';
+                btn.innerHTML = originalText;
+            }, 3000);
+        } else {
+            alert(data.error || 'Failed to add medicine to cart.');
+            btn.innerHTML = originalText;
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        alert('Server communication error adding to cart.');
+    });
+}
+
+function showTypingIndicator() {
+    const id = 'typing-' + Date.now();
+    const row = document.createElement('div');
+    row.className = 'chat-bubble-row bot';
+    row.id = id;
+    row.innerHTML = `
+        <div class="chat-avatar bot-avatar"><i class="fa-solid fa-robot"></i></div>
+        <div class="chat-bubble typing-bubble">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+        </div>
+    `;
+    chatMessages.appendChild(row);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return id;
+}
+
+function removeTypingIndicator(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

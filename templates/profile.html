@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}User Profile – MedConnect{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}?v=2.5">
+{% endblock %}
+
+{% block content %}
+<div class="profile-page-wrapper">
+
+    <div class="page-top-bar">
+        <div>
+            <h2>User Profile & Medical Tagging</h2>
+            <p>Manage your account credentials, emergency contacts, and vital medical tags.</p>
+        </div>
+        <div>
+            <a href="{% url 'logout' %}" class="btn btn-outline text-danger">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+            </a>
+        </div>
+    </div>
+
+    <div class="profile-layout-grid">
+        <!-- LEFT: PROFILE CARD -->
+        <div class="profile-sidebar-col">
+            <div class="card text-center p-4">
+                <div class="profile-avatar-large">
+                    {% if profile.name %}{{ profile.name|slice:":1" }}{% elif current_user.name %}{{ current_user.name|slice:":1" }}{% else %}M{% endif %}
+                </div>
+                <h3 class="mt-3">{{ profile.name|default:current_user.name|default:"User Profile" }}</h3>
+                <p class="text-muted">{{ profile.email|default:current_user.email }}</p>
+                <span class="badge badge-teal mt-1"><i class="fa-solid fa-shield-check"></i> Verified Healthcare Member</span>
+
+                <hr class="my-4">
+
+                <div class="quick-medical-summary text-start">
+                    <div class="med-tag-item">
+                        <span class="text-muted">Blood Group:</span>
+                        <strong>{{ profile.blood_group|default:"O+" }}</strong>
+                    </div>
+                    <div class="med-tag-item mt-2">
+                        <span class="text-muted">Known Allergies:</span>
+                        <strong class="text-danger">{{ profile.allergies|default:"None recorded" }}</strong>
+                    </div>
+                    <div class="med-tag-item mt-2">
+                        <span class="text-muted">Emergency:</span>
+                        <span>{{ profile.emergency_contact|default:"None provided" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: EDIT PROFILE FORM -->
+        <div class="profile-main-col">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fa-solid fa-user-pen text-teal"></i> Update Personal & Medical Information</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% url 'profile' %}">
+                        {% csrf_token %}
+
+                        <div class="form-row mb-3">
+                            <div class="form-group flex-1">
+                                <label class="form-label">Full Name *</label>
+                                <input type="text" name="name" class="form-input" value="{{ profile.name|default:'' }}" required>
+                            </div>
+                            <div class="form-group flex-1">
+                                <label class="form-label">Email Address (Read-only)</label>
+                                <input type="email" class="form-input" value="{{ profile.email|default:'' }}" readonly disabled>
+                            </div>
+                        </div>
+
+                        <div class="form-row mb-3">
+                            <div class="form-group flex-1">
+                                <label class="form-label">Phone Number *</label>
+                                <input type="text" name="phone" class="form-input" value="{{ profile.phone|default:'' }}" required>
+                            </div>
+                            <div class="form-group flex-1">
+                                <label class="form-label">Blood Group</label>
+                                <select name="blood_group" class="form-input">
+                                    <option value="O+" {% if profile.blood_group == 'O+' %}selected{% endif %}>O Positive (O+)</option>
+                                    <option value="O-" {% if profile.blood_group == 'O-' %}selected{% endif %}>O Negative (O-)</option>
+                                    <option value="A+" {% if profile.blood_group == 'A+' %}selected{% endif %}>A Positive (A+)</option>
+                                    <option value="A-" {% if profile.blood_group == 'A-' %}selected{% endif %}>A Negative (A-)</option>
+                                    <option value="B+" {% if profile.blood_group == 'B+' %}selected{% endif %}>B Positive (B+)</option>
+                                    <option value="B-" {% if profile.blood_group == 'B-' %}selected{% endif %}>B Negative (B-)</option>
+                                    <option value="AB+" {% if profile.blood_group == 'AB+' %}selected{% endif %}>AB Positive (AB+)</option>
+                                    <option value="AB-" {% if profile.blood_group == 'AB-' %}selected{% endif %}>AB Negative (AB-)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label">Known Drug Allergies & Clinical Cautions</label>
+                            <input type="text" name="allergies" class="form-input" value="{{ profile.allergies|default:'' }}" placeholder="E.g. Penicillin, Sulfa drugs, Aspirin">
+                            <span class="form-hint">Our AI Tutor and Pharmacists check this against your ordered medicines.</span>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label class="form-label">Emergency Contact Name & Phone</label>
+                            <input type="text" name="emergency_contact" class="form-input" value="{{ profile.emergency_contact|default:'' }}" placeholder="+1 (555) 000-0000 (Spouse/Relative)">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Profile Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ medicine.name }} – MedConnect{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/medicines.css' %}?v=2.5">
+{% endblock %}
+
+{% block content %}
+<div class="medicine-detail-container">
+
+    <div class="breadcrumb-nav">
+        <a href="{% url 'dashboard' %}"><i class="fa-solid fa-house"></i> Dashboard</a>
+        <i class="fa-solid fa-chevron-right"></i>
+        <a href="{% url 'medicines' %}">Medicines</a>
+        <i class="fa-solid fa-chevron-right"></i>
+        <a href="{% url 'medicines' %}?category={{ medicine.category_slug }}">{{ medicine.category }}</a>
+        <i class="fa-solid fa-chevron-right"></i>
+        <span>{{ medicine.name }}</span>
+    </div>
+
+    <!-- MAIN PRODUCT CARD -->
+    <div class="card medicine-main-card">
+        <div class="med-detail-grid">
+            <!-- Left: Product Image -->
+            <div class="med-detail-gallery">
+                <div class="med-large-image-wrap">
+                    <img src="{{ medicine.image|default:'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800' }}" alt="{{ medicine.name }}">
+                    <span class="category-badge-floating">{{ medicine.category }}</span>
+                </div>
+            </div>
+
+            <!-- Right: Details & Buying Options -->
+            <div class="med-detail-info">
+                <div class="med-header-row">
+                    <span class="manufacturer-tag"><i class="fa-solid fa-building"></i> {{ medicine.manufacturer }}</span>
+                    <button class="wishlist-round-btn {% if in_wishlist %}active{% endif %}" onclick="toggleWishlist('{{ medicine.id }}', this)">
+                        <i class="fa-solid fa-heart"></i>
+                    </button>
+                </div>
+
+                <h1 class="product-title">{{ medicine.name }}</h1>
+
+                <div class="rating-and-reviews">
+                    <span class="rating-pill"><i class="fa-solid fa-star"></i> {{ medicine.rating|default:"4.8" }}</span>
+                    <span class="reviews-count">({{ medicine.reviews_count|default:"240" }} verified customer reviews)</span>
+                    <span class="divider">&bull;</span>
+                    <span class="stock-badge in-stock"><i class="fa-solid fa-circle-check"></i> In Stock ({{ medicine.stock }} units)</span>
+                </div>
+
+                <div class="price-container">
+                    <span class="current-price">₹{{ medicine.price|floatformat:2 }}</span>
+                    {% if medicine.mrp %}
+                    <span class="mrp-price">MRP ₹{{ medicine.mrp|floatformat:2 }}</span>
+                    <span class="discount-badge">Save ₹{{ medicine.mrp|floatformat:2 }}</span>
+                    {% endif %}
+                    <span class="tax-note">Inclusive of all local healthcare taxes</span>
+                </div>
+
+                <!-- Dosage Specification -->
+                <div class="spec-highlight-box">
+                    <div class="spec-item">
+                        <i class="fa-solid fa-prescription-bottle-medical"></i>
+                        <div>
+                            <strong>Standard Dosage:</strong>
+                            <p>{{ medicine.dosage }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quantity & Add to Cart -->
+                <div class="purchase-actions-box">
+                    <div class="qty-control">
+                        <button type="button" class="qty-btn" onclick="adjustDetailQty(-1)"><i class="fa-solid fa-minus"></i></button>
+                        <input type="number" id="detailQtyInput" value="1" min="1" max="20" readonly>
+                        <button type="button" class="qty-btn" onclick="adjustDetailQty(1)"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+
+                    <button class="btn btn-primary btn-lg flex-1" id="detailAddToCartBtn" onclick="addDetailToCart('{{ medicine.id }}')">
+                        <i class="fa-solid fa-cart-shopping"></i> Add to Cart
+                    </button>
+
+                    <a href="{% url 'cart' %}" class="btn btn-outline btn-lg">
+                        Go to Cart
+                    </a>
+                </div>
+
+                <!-- Trust Guarantees -->
+                <div class="trust-guarantees-grid">
+                    <div class="trust-pill">
+                        <i class="fa-solid fa-shield-halved text-teal"></i>
+                        <span>100% Genuine Medicine</span>
+                    </div>
+                    <div class="trust-pill">
+                        <i class="fa-solid fa-temperature-arrow-down text-blue"></i>
+                        <span>Temperature-Controlled Delivery</span>
+                    </div>
+                    <div class="trust-pill">
+                        <i class="fa-solid fa-truck-fast text-success"></i>
+                        <span>Express 30-Min Delivery</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RELATED MEDICINES -->
+    {% if related_medicines %}
+    <div class="related-medicines-section">
+        <h3>Related in {{ medicine.category }}</h3>
+        <div class="medicines-grid">
+            {% for rel in related_medicines %}
+            <div class="med-card">
+                <div class="med-image-box">
+                    <img src="{{ rel.image }}" alt="{{ rel.name }}">
+                    <span class="med-cat-tag">{{ rel.category }}</span>
+                </div>
+                <div class="med-content">
+                    <div class="med-manufacturer">{{ rel.manufacturer }}</div>
+                    <h4 class="med-name"><a href="{% url 'medicine_detail' rel.id %}">{{ rel.name }}</a></h4>
+                    <div class="med-dosage">{{ rel.dosage }}</div>
+                    <div class="med-footer">
+                        <span class="med-price">₹{{ rel.price|floatformat:2 }}</span>
+                        <a href="{% url 'medicine_detail' rel.id %}" class="btn btn-outline btn-sm">View</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function adjustDetailQty(delta) {
+    const input = document.getElementById('detailQtyInput');
+    let val = parseInt(input.value) || 1;
+    val = Math.max(1, Math.min(20, val + delta));
+    input.value = val;
+}
+
+function addDetailToCart(medId) {
+    const qty = parseInt(document.getElementById('detailQtyInput').value) || 1;
+    const btn = document.getElementById('detailAddToCartBtn');
+    const oldText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Adding to Cart...';
+    btn.disabled = true;
+
+    fetch('/api/cart/add/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ medicine_id: medId, quantity: qty })
+    })
+    .then(res => res.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) {
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Added to Cart!';
+            btn.classList.add('btn-success');
+            const badges = document.querySelectorAll('.cart-count-badge');
+            badges.forEach(b => b.textContent = data.cart_count);
+            setTimeout(() => {
+                btn.innerHTML = oldText;
+                btn.classList.remove('btn-success');
+            }, 2000);
+        } else {
+            alert(data.error || 'Failed to add medicine');
+            btn.innerHTML = oldText;
+        }
+    });
+}
+
+function toggleWishlist(medId, btn) {
+    fetch('/api/wishlist/toggle/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ medicine_id: medId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            btn.classList.toggle('active', data.in_wishlist);
+            const badge = document.getElementById('sidebarWishlistBadge');
+            if (badge) badge.textContent = data.wishlist_count;
+        }
+    });
+}
+</script>
+{% endblock %}

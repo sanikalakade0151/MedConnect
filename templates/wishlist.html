@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Wishlist – MedConnect{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/medicines.css' %}?v=2.5">
+{% endblock %}
+
+{% block content %}
+<div class="wishlist-page-wrapper">
+
+    <div class="page-top-bar">
+        <div>
+            <h2>My Saved Medicines</h2>
+            <p>Your saved healthcare essentials. Quickly add them to your cart whenever you need a refill.</p>
+        </div>
+        <div>
+            <a href="{% url 'medicines' %}" class="btn btn-outline">
+                <i class="fa-solid fa-pills"></i> Browse More Medicines
+            </a>
+        </div>
+    </div>
+
+    {% if wishlist_items %}
+    <div class="medicines-grid">
+        {% for item in wishlist_items %}
+        <div class="med-card" id="wishlist-item-{{ item.id }}">
+            <div class="med-image-box">
+                <img src="{{ item.image|default:'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400' }}" alt="{{ item.name }}">
+                <span class="med-cat-tag">{{ item.category }}</span>
+            </div>
+
+            <div class="med-content">
+                <div class="med-manufacturer">{{ item.manufacturer }}</div>
+                <h4 class="med-name">{{ item.name }}</h4>
+                <div class="med-dosage">{{ item.dosage }}</div>
+
+                <div class="med-footer">
+                    <span class="med-price">₹{{ item.price|floatformat:2 }}</span>
+                    <div class="med-actions">
+                        <button class="btn btn-outline btn-sm text-danger" onclick="removeFromWishlist('{{ item.medicine_id }}', '{{ item.id }}')" title="Remove">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="moveWishlistToCart('{{ item.id }}', this)">
+                            <i class="fa-solid fa-cart-plus"></i> Move to Cart
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card empty-state-box text-center py-5">
+        <i class="fa-regular fa-heart fa-3x text-muted mb-3"></i>
+        <h3>Your Wishlist is Empty</h3>
+        <p class="text-muted">Save your regular medicines to quickly re-order them anytime.</p>
+        <a href="{% url 'medicines' %}" class="btn btn-primary">Browse Medicines</a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function moveWishlistToCart(itemId, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Moving...';
+
+    fetch('/api/wishlist/move-to-cart/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ item_id: itemId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const card = document.getElementById(`wishlist-item-${itemId}`);
+            if (card) card.remove();
+            const badges = document.querySelectorAll('.cart-count-badge');
+            badges.forEach(b => b.textContent = data.cart_count);
+            const wishBadge = document.getElementById('sidebarWishlistBadge');
+            if (wishBadge) {
+                let count = parseInt(wishBadge.textContent) || 1;
+                wishBadge.textContent = Math.max(0, count - 1);
+            }
+        } else {
+            alert(data.error || 'Failed to move to cart');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-cart-plus"></i> Move to Cart';
+        }
+    });
+}
+
+function removeFromWishlist(medId, cardId) {
+    fetch('/api/wishlist/toggle/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ medicine_id: medId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const card = document.getElementById(`wishlist-item-${cardId}`);
+            if (card) card.remove();
+            const wishBadge = document.getElementById('sidebarWishlistBadge');
+            if (wishBadge) wishBadge.textContent = data.wishlist_count;
+        }
+    });
+}
+</script>
+{% endblock %}

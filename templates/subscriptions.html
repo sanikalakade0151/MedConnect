@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Auto-Refill Subscriptions – MedConnect{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/subscriptions.css' %}?v=2.5">
+{% endblock %}
+
+{% block content %}
+<div class="subscriptions-page-wrapper">
+
+    <div class="page-top-bar">
+        <div>
+            <h2>Medicine Auto-Refill Subscriptions</h2>
+            <p>Automate recurring chronic medications (diabetes, hypertension, thyroid). Enjoy 5% extra discount and never run out of critical medicines.</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="openNewSubModal()">
+                <i class="fa-solid fa-plus"></i> New Subscription
+            </button>
+        </div>
+    </div>
+
+    <!-- SUBSCRIPTION CARDS GRID -->
+    <div class="subs-grid">
+        {% for sub in subscriptions %}
+        <div class="card sub-card" id="sub-card-{{ sub.id }}">
+            <div class="sub-card-header flex-between">
+                <span class="sub-cat-badge">{{ sub.category }}</span>
+                <span class="badge {% if sub.status == 'Active' %}badge-success{% elif sub.status == 'Paused' %}badge-warning{% else %}badge-danger{% endif %}" id="status-badge-{{ sub.id }}">
+                    {{ sub.status }}
+                </span>
+            </div>
+
+            <div class="sub-card-body">
+                <h3 class="sub-med-title">{{ sub.medicine_name }}</h3>
+                <div class="sub-detail-line">
+                    <span class="sub-meta-label"><i class="fa-solid fa-repeat text-teal"></i> Frequency:</span>
+                    <strong>{{ sub.frequency }}</strong>
+                </div>
+                <div class="sub-detail-line">
+                    <span class="sub-meta-label"><i class="fa-solid fa-boxes-stacked text-primary"></i> Quantity:</span>
+                    <span>{{ sub.quantity }} pack(s)</span>
+                </div>
+                <div class="sub-detail-line">
+                    <span class="sub-meta-label"><i class="fa-regular fa-calendar-check text-success"></i> Next Refill Date:</span>
+                    <strong class="text-teal">{{ sub.next_delivery }}</strong>
+                </div>
+                <div class="sub-detail-line">
+                    <span class="sub-meta-label"><i class="fa-solid fa-credit-card text-muted"></i> Billing:</span>
+                    <span>₹{{ sub.price|floatformat:2 }} via {{ sub.payment_mode|default:"Auto-Debit" }}</span>
+                </div>
+            </div>
+
+            <div class="sub-card-footer flex-between">
+                {% if sub.status == 'Active' %}
+                <button class="btn btn-outline btn-sm text-warning" onclick="updateSubStatus('{{ sub.id }}', 'Paused')">
+                    <i class="fa-solid fa-pause"></i> Pause Deliveries
+                </button>
+                {% elif sub.status == 'Paused' %}
+                <button class="btn btn-outline btn-sm text-success" onclick="updateSubStatus('{{ sub.id }}', 'Active')">
+                    <i class="fa-solid fa-play"></i> Resume Refill
+                </button>
+                {% endif %}
+                <button class="btn btn-outline btn-sm text-danger" onclick="updateSubStatus('{{ sub.id }}', 'Cancelled')">
+                    <i class="fa-solid fa-xmark"></i> Cancel
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card empty-state-box col-span-full text-center py-5">
+            <i class="fa-solid fa-arrows-spin fa-3x text-muted mb-3"></i>
+            <h4>No Active Subscriptions</h4>
+            <p class="text-muted">Set up automatic refills for your daily maintenance medications with one click.</p>
+            <button class="btn btn-primary" onclick="openNewSubModal()">Create First Subscription</button>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- NEW SUBSCRIPTION MODAL -->
+<div class="custom-modal" id="newSubModal" style="display: none;">
+    <div class="modal-backdrop" onclick="closeNewSubModal()"></div>
+    <div class="modal-dialog">
+        <div class="modal-content card">
+            <div class="modal-header flex-between">
+                <h4><i class="fa-solid fa-repeat text-teal"></i> Create Auto-Refill Subscription</h4>
+                <button class="modal-close" onclick="closeNewSubModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label class="form-label">Medicine Name *</label>
+                    <input type="text" id="subMedName" class="form-input" placeholder="E.g., Glycomet 500 SR, Telma 40">
+                </div>
+                <div class="form-group mb-3">
+                    <label class="form-label">Delivery Frequency</label>
+                    <select id="subFreq" class="form-input">
+                        <option value="Weekly">Weekly (Every 7 days)</option>
+                        <option value="Bi-Weekly">Bi-Weekly (Every 15 days)</option>
+                        <option value="Monthly" selected>Monthly (Every 30 days)</option>
+                        <option value="Quarterly">Every 3 Months (90 days)</option>
+                    </select>
+                </div>
+                <div class="form-group mb-3">
+                    <label class="form-label">Quantity per Delivery</label>
+                    <input type="number" id="subQty" class="form-input" value="1" min="1" max="10">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeNewSubModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitSubscription()">Start Auto-Refill</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openNewSubModal() {
+    document.getElementById('newSubModal').style.display = 'block';
+}
+function closeNewSubModal() {
+    document.getElementById('newSubModal').style.display = 'none';
+}
+
+function submitSubscription() {
+    const medName = document.getElementById('subMedName').value.trim();
+    const freq = document.getElementById('subFreq').value;
+    const qty = document.getElementById('subQty').value;
+
+    if (!medName) {
+        alert('Please enter medicine name.');
+        return;
+    }
+
+    fetch('/api/subscriptions/create/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ medicine_name: medName, frequency: freq, quantity: qty })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert(data.error || 'Failed to create subscription.');
+        }
+    });
+}
+
+function updateSubStatus(subId, newStatus) {
+    if (!confirm(`Are you sure you want to mark this subscription as ${newStatus}?`)) return;
+
+    fetch('/api/subscriptions/status/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ subscription_id: subId, status: newStatus })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        }
+    });
+}
+</script>
+{% endblock %}

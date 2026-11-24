@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Offers & Coupons – MedConnect{% endblock %}
+
+{% block content %}
+<div class="offers-page-wrapper">
+
+    <div class="page-top-bar">
+        <div>
+            <h2>Discounts & Promotional Coupons</h2>
+            <p>Save more on your prescriptions, chronic medicines, and wellness orders with exclusive promo vouchers.</p>
+        </div>
+        <div>
+            <a href="{% url 'cart' %}" class="btn btn-outline">
+                <i class="fa-solid fa-cart-shopping"></i> View Cart & Apply
+            </a>
+        </div>
+    </div>
+
+    <div class="offers-grid-page">
+        {% for off in offers %}
+        <div class="coupon-card-large card">
+            <div class="coupon-tag-head">
+                {% if off.discount_percentage %}
+                <span class="discount-pill">{{ off.discount_percentage }}% OFF</span>
+                {% elif off.free_shipping %}
+                <span class="discount-pill bg-blue text-white">FREE DELIVERY</span>
+                {% endif %}
+                <span class="validity-text"><i class="fa-regular fa-clock"></i> Valid until {{ off.valid_until }}</span>
+            </div>
+
+            <div class="coupon-content">
+                <h3>{{ off.title }}</h3>
+                <p>{{ off.description }}</p>
+                <div class="coupon-min-order">
+                    <i class="fa-solid fa-circle-info text-teal"></i> Minimum cart order value: <strong>₹{{ off.min_order|floatformat:2 }}</strong>
+                </div>
+            </div>
+
+            <div class="coupon-code-footer flex-between">
+                <div class="code-badge-box">
+                    <span class="code-text" id="code-{{ off.code }}">{{ off.code }}</span>
+                </div>
+                <button class="btn btn-primary btn-sm copy-btn" onclick="copyCode('{{ off.code }}', this)">
+                    <i class="fa-solid fa-copy"></i> Copy Code
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- HOW TO USE COUPONS BANNER -->
+    <div class="card mt-4 p-4 how-to-use-card">
+        <h4><i class="fa-solid fa-lightbulb text-amber"></i> How to Redeem Your Promotional Coupons:</h4>
+        <div class="steps-row mt-3">
+            <div class="step-col">
+                <div class="num-circle">1</div>
+                <h5>Copy Code</h5>
+                <p>Click "Copy Code" on any active coupon above.</p>
+            </div>
+            <div class="step-col">
+                <div class="num-circle">2</div>
+                <h5>Add Medicines</h5>
+                <p>Browse products and add required medicines to your cart.</p>
+            </div>
+            <div class="step-col">
+                <div class="num-circle">3</div>
+                <h5>Apply at Checkout</h5>
+                <p>Paste the coupon into the promo code box during checkout to apply your instant discount.</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyCode(code, btn) {
+    navigator.clipboard.writeText(code).then(() => {
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+        btn.classList.add('btn-success');
+        setTimeout(() => {
+            btn.innerHTML = oldHtml;
+            btn.classList.remove('btn-success');
+        }, 2000);
+    });
+}
+</script>
+{% endblock %}

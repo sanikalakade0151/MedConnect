@@ -1,0 +1,224 @@
+/* ==========================================================================
+   MEDCONNECT – Modern Checkout Styles (checkout.css)
+   ========================================================================== */
+
+.checkout-layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 2rem;
+    align-items: start;
+}
+
+@media (max-width: 992px) {
+    .checkout-layout-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.checkout-section-card {
+    margin-bottom: 1.5rem;
+}
+
+/* Address Options Radio Cards */
+.address-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.address-radio-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: #ffffff;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.address-radio-card:hover {
+    border-color: var(--primary);
+    background: #f8fafc;
+}
+
+.address-radio-card.selected {
+    border-color: var(--primary);
+    background: #f0fdfa;
+    box-shadow: 0 0 0 1.5px var(--primary);
+}
+
+.address-radio-card input[type="radio"] {
+    margin-top: 0.25rem;
+    accent-color: var(--primary);
+}
+
+.addr-card-content {
+    flex: 1;
+}
+
+.addr-top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.35rem;
+}
+
+.addr-label-badge {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: var(--radius-full);
+}
+
+.recipient-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.addr-text {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Payment Methods Grid */
+.payment-methods-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.payment-option-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.15rem 1.25rem;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: #ffffff;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.payment-option-card:hover {
+    border-color: var(--primary);
+    background: #f8fafc;
+}
+
+.payment-option-card.selected {
+    border-color: var(--primary);
+    background: #f0fdfa;
+    box-shadow: 0 0 0 1.5px var(--primary);
+}
+
+.payment-option-card input[type="radio"] {
+    accent-color: var(--primary);
+}
+
+.pm-icon-wrap {
+    font-size: 1.4rem;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+}
+
+.pm-info {
+    flex: 1;
+}
+
+.pm-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.pm-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Right Summary Column */
+.checkout-items-mini {
+    max-height: 220px;
+    overflow-y: auto;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.checkout-mini-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.88rem;
+}
+
+.mini-item-name {
+    display: flex;
+    flex-direction: column;
+}
+
+.mini-item-qty {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.mini-item-price {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.coupon-box-checkout {
+    margin-bottom: 1.25rem;
+}
+
+.coupon-input-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.coupon-input-group input {
+    flex: 1;
+    padding: 0.5rem 0.85rem;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 0.88rem;
+    text-transform: uppercase;
+}
+
+.coupon-success-tag {
+    margin-top: 0.5rem;
+    font-size: 0.82rem;
+    color: #065f46;
+    background: #ecfdf5;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius-sm);
+}
+
+.place-order-btn {
+    font-size: 1.05rem;
+    padding: 0.9rem;
+    letter-spacing: -0.01em;
+}
+
+.live-tracking-guarantee-note {
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+}

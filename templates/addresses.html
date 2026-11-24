@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delivery Addresses – MedConnect{% endblock %}
+
+{% block content %}
+<div class="addresses-page-wrapper">
+
+    <div class="page-top-bar">
+        <div>
+            <h2>Saved Delivery Addresses</h2>
+            <p>Manage your home, clinic, and office addresses for fast 30-minute delivery.</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="openAddressModal()">
+                <i class="fa-solid fa-plus"></i> Add New Address
+            </button>
+        </div>
+    </div>
+
+    <!-- ADDRESSES GRID -->
+    <div class="addresses-grid">
+        {% for addr in addresses %}
+        <div class="card address-card {% if addr.is_default %}default-border{% endif %}" id="addr-card-{{ addr.id }}">
+            <div class="addr-card-header flex-between">
+                <span class="addr-tag"><i class="fa-solid fa-location-dot text-teal"></i> {{ addr.label }}</span>
+                {% if addr.is_default %}
+                <span class="badge badge-success"><i class="fa-solid fa-check"></i> Default</span>
+                {% endif %}
+            </div>
+            <div class="addr-card-body">
+                <h4>{{ addr.recipient_name }}</h4>
+                <p class="addr-phone"><i class="fa-solid fa-phone text-muted"></i> {{ addr.phone }}</p>
+                <p class="addr-full-text">{{ addr.street }}, {{ addr.city }}, {{ addr.state }} - {{ addr.postal_code }}</p>
+            </div>
+            <div class="addr-card-footer flex-between">
+                <span class="text-muted small">Standard & Express Delivery</span>
+                <button class="btn-icon text-danger" onclick="deleteAddress('{{ addr.id }}')" title="Delete Address">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card empty-state-box col-span-full text-center py-5">
+            <i class="fa-solid fa-map-location-dot fa-3x text-muted mb-3"></i>
+            <h4>No Delivery Addresses Saved</h4>
+            <p class="text-muted">Save your delivery locations for swift, one-tap checkouts.</p>
+            <button class="btn btn-primary" onclick="openAddressModal()">Add Delivery Address</button>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- ADD ADDRESS MODAL -->
+<div class="custom-modal" id="addrModal" style="display: none;">
+    <div class="modal-backdrop" onclick="closeAddressModal()"></div>
+    <div class="modal-dialog">
+        <div class="modal-content card">
+            <div class="modal-header flex-between">
+                <h4><i class="fa-solid fa-location-dot text-teal"></i> Add New Delivery Address</h4>
+                <button class="modal-close" onclick="closeAddressModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row mb-3">
+                    <div class="form-group flex-1">
+                        <label class="form-label">Address Label *</label>
+                        <select id="addrLabel" class="form-input">
+                            <option value="Home">Home</option>
+                            <option value="Clinic / Office">Clinic / Office</option>
+                            <option value="Parents' Home">Parents' Home</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group flex-1">
+                        <label class="form-label">Recipient Full Name *</label>
+                        <input type="text" id="addrRecipient" class="form-input" placeholder="E.g. Dr. Alex Morgan" required>
+                    </div>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="form-label">Phone Number *</label>
+                    <input type="text" id="addrPhone" class="form-input" placeholder="+1 (555) 349-2810" required>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="form-label">Street Address & House / Flat # *</label>
+                    <input type="text" id="addrStreet" class="form-input" placeholder="742 Evergreen Terrace, Apt 4B" required>
+                </div>
+
+                <div class="form-row mb-3">
+                    <div class="form-group flex-1">
+                        <label class="form-label">City *</label>
+                        <input type="text" id="addrCity" class="form-input" placeholder="Springfield" required>
+                    </div>
+                    <div class="form-group flex-1">
+                        <label class="form-label">State / Province *</label>
+                        <input type="text" id="addrState" class="form-input" placeholder="IL" required>
+                    </div>
+                    <div class="form-group flex-1">
+                        <label class="form-label">Postal / ZIP Code *</label>
+                        <input type="text" id="addrPostal" class="form-input" placeholder="62704" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeAddressModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitAddress()">Save Address</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openAddressModal() {
+    document.getElementById('addrModal').style.display = 'block';
+}
+function closeAddressModal() {
+    document.getElementById('addrModal').style.display = 'none';
+}
+
+function submitAddress() {
+    const label = document.getElementById('addrLabel').value;
+    const recipient = document.getElementById('addrRecipient').value.trim();
+    const phone = document.getElementById('addrPhone').value.trim();
+    const street = document.getElementById('addrStreet').value.trim();
+    const city = document.getElementById('addrCity').value.trim();
+    const state = document.getElementById('addrState').value.trim();
+    const postal = document.getElementById('addrPostal').value.trim();
+
+    if (!recipient || !phone || !street || !city || !postal) {
+        alert('Please fill in all required fields.');
+        return;
+    }
+
+    fetch('/api/addresses/save/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+            label, recipient_name: recipient, phone, street, city, state, postal_code: postal
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert(data.error || 'Failed to save address.');
+        }
+    });
+}
+
+function deleteAddress(addrId) {
+    if (!confirm('Are you sure you want to delete this address?')) return;
+
+    fetch('/api/addresses/delete/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ address_id: addrId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const card = document.getElementById(`addr-card-${addrId}`);
+            if (card) card.remove();
+        }
+    });
+}
+</script>
+{% endblock %}

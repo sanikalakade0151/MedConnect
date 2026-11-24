@@ -1,0 +1,225 @@
+/* ==========================================================================
+   MEDCONNECT – Modern Live Delivery Tracking (tracking.css)
+   ========================================================================== */
+
+.tracking-layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 1.75rem;
+    align-items: start;
+}
+
+@media (max-width: 992px) {
+    .tracking-layout-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.map-card {
+    background: #ffffff;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+/* ETA Highlight Card */
+.eta-highlight-card {
+    background: linear-gradient(135deg, #093c3f 0%, #06282a 100%);
+    color: #ffffff;
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 1.25rem;
+}
+
+.eta-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #a7f3d0;
+    font-weight: 600;
+}
+
+.eta-timer {
+    font-size: 2.8rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin: 0.25rem 0 0.75rem 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.eta-unit {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.eta-progress-bar-wrap {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+}
+
+.eta-progress-fill {
+    height: 100%;
+    background: #14b8a6;
+    border-radius: 999px;
+    transition: width 0.5s ease;
+}
+
+.eta-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-title {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-bottom: 0.2rem;
+}
+
+.stat-box h4 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
+    color: #f8fafc;
+}
+
+/* Driver Info Card */
+.driver-info-card {
+    background: #ffffff;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.25rem;
+}
+
+.driver-profile-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.driver-large-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #ccfbf1;
+}
+
+.driver-details-wrap h4 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
+}
+
+.vehicle-info {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.35rem;
+}
+
+.rating-badge-lg {
+    display: inline-block;
+    background: #fef3c7;
+    color: #b45309;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.driver-contact-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Vertical Milestones Timeline */
+.vertical-timeline {
+    position: relative;
+    padding-left: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.vertical-timeline::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 10px;
+    bottom: 10px;
+    width: 2px;
+    background: #e2e8f0;
+}
+
+.v-step {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+}
+
+.v-dot {
+    position: absolute;
+    left: -28px;
+    top: 2px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    transition: var(--transition);
+}
+
+.v-step.v-done .v-dot {
+    background: #0d9488;
+    color: #ffffff;
+    box-shadow: 0 0 0 3px #ccfbf1;
+}
+
+.v-step.v-current .v-dot {
+    background: #0284c7;
+    color: #ffffff;
+    box-shadow: 0 0 0 4px #e0f2fe;
+    animation: pulse 1.8s infinite;
+}
+
+.v-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.v-step.v-done .v-title {
+    color: var(--text-primary);
+}
+
+.v-step.v-current .v-title {
+    color: #0284c7;
+    font-weight: 700;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(2, 132, 199, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
+}

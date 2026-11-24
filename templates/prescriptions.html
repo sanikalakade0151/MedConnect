@@ -1,0 +1,411 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Prescription OCR Scanner – MedConnect{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/prescriptions.css' %}?v=2.5">
+{% endblock %}
+
+{% block content %}
+<div class="prescriptions-page-wrapper">
+
+    <div class="page-top-bar">
+        <div>
+            <h2>Digital Prescriptions & OCR Scanner</h2>
+            <p>Upload your doctor's prescription (Image or PDF). Our OCR engine extracts medicine names, dosages, and schedules for your review.</p>
+        </div>
+        <div>
+            <a href="{% url 'cart' %}" class="btn btn-outline">
+                <i class="fa-solid fa-cart-shopping"></i> View Cart
+            </a>
+        </div>
+    </div>
+
+    <!-- UPLOAD & SCAN SECTION -->
+    <div class="card ocr-upload-card">
+        <div class="card-header flex-between">
+            <h4><i class="fa-solid fa-wand-magic-sparkles text-teal"></i> Scan New Prescription (AI OCR)</h4>
+            <span class="ocr-badge"><i class="fa-solid fa-shield-halved"></i> HIPAA Compliant & Secure</span>
+        </div>
+        <div class="card-body">
+            
+            <form id="rxUploadForm" enctype="multipart/form-data">
+                <div class="dropzone-area" id="dropzoneArea" onclick="document.getElementById('rxFileInput').click()">
+                    <input type="file" id="rxFileInput" name="prescription_file" accept=".jpg,.jpeg,.png,.pdf" style="display: none;" onchange="handleFileSelect(this)">
+                    <div class="dropzone-icon">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <h4>Click or drag & drop prescription here</h4>
+                    <p class="dropzone-hint">Supports PNG, JPG, JPEG, and PDF documents (Max 15MB)</p>
+                    <div class="selected-file-name" id="selectedFileName"></div>
+                </div>
+
+                <div class="upload-btn-row">
+                    <button type="button" class="btn btn-primary btn-lg" id="scanBtn" onclick="uploadAndScan()" disabled>
+                        <i class="fa-solid fa-bolt"></i> Scan Prescription with OCR
+                    </button>
+                </div>
+            </form>
+
+            <!-- SCANNING PROGRESS LOADER -->
+            <div class="scanning-loader-box" id="scanLoader" style="display: none;">
+                <div class="scanner-laser-line"></div>
+                <div class="spinner-border-custom"></div>
+                <h5>Analyzing Prescription with OCR Engine...</h5>
+                <p>Detecting doctor notes, prescribed medicines, dosages, frequencies, and durations.</p>
+            </div>
+
+            <!-- EXTRACTED RESULTS & VERIFICATION SECTION -->
+            <div class="ocr-results-panel" id="ocrResultsPanel" style="display: none;">
+                <div class="results-banner-success">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <div>
+                        <strong>Extraction Complete!</strong> Please verify or edit the extracted details before ordering.
+                    </div>
+                </div>
+
+                <!-- Doctor Details Header -->
+                <div class="doctor-info-preview card mt-3">
+                    <div class="doc-info-grid">
+                        <div>
+                            <span class="info-label">Doctor:</span>
+                            <span class="info-val" id="docName">Dr. Jennifer Hayes, MD</span>
+                        </div>
+                        <div>
+                            <span class="info-label">Clinic / Hospital:</span>
+                            <span class="info-val" id="clinicName">Metro Health Specialty Clinic</span>
+                        </div>
+                        <div>
+                            <span class="info-label">Date:</span>
+                            <span class="info-val" id="rxDate">19 Nov 2026</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verified Medicines Table -->
+                <div class="verified-table-wrapper card mt-3">
+                    <div class="card-header flex-between">
+                        <h4>Extracted Medicines for Verification</h4>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="addCustomRow()">
+                            <i class="fa-solid fa-plus"></i> Add Another Medicine
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="custom-table" id="extractedTable">
+                                <thead>
+                                    <tr>
+                                        <th>Medicine Name</th>
+                                        <th>Dosage</th>
+                                        <th>Frequency</th>
+                                        <th>Duration</th>
+                                        <th>Qty</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="extractedTableBody">
+                                    <!-- Populated via OCR JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ORDER ACTION -->
+                <div class="verify-order-actions-bar mt-3">
+                    <button type="button" class="btn btn-primary btn-lg" id="orderVerifiedBtn" onclick="orderVerifiedMedicines()">
+                        <i class="fa-solid fa-cart-plus"></i> Confirm & Add Verified Medicines to Cart
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- PAST UPLOADED PRESCRIPTIONS HISTORY -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4><i class="fa-solid fa-clock-rotate-left"></i> Prescription History</h4>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Document</th>
+                            <th>Uploaded On</th>
+                            <th>Type</th>
+                            <th>Extracted Medicines</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rx in prescriptions %}
+                        <tr>
+                            <td>
+                                <strong>{{ rx.file_name }}</strong>
+                            </td>
+                            <td>{{ rx.uploaded_at|slice:":10" }}</td>
+                            <td><span class="badge badge-info">{{ rx.file_type }}</span></td>
+                            <td>{{ rx.medicines_count|default:"3" }} medicines detected</td>
+                            <td><span class="badge badge-success"><i class="fa-solid fa-check"></i> {{ rx.status }}</span></td>
+                            <td>
+                                <a href="{{ rx.file_url }}" target="_blank" class="btn btn-outline btn-sm">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> View File
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                No past prescriptions uploaded yet. Use the upload box above to scan your first prescription.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedFile = null;
+
+function handleFileSelect(input) {
+    if (input.files && input.files[0]) {
+        selectedFile = input.files[0];
+        document.getElementById('selectedFileName').innerHTML = `
+            <i class="fa-solid fa-file text-teal"></i> Selected: <strong>${selectedFile.name}</strong> (${(selectedFile.size / 1024).toFixed(1)} KB)
+        `;
+        document.getElementById('scanBtn').disabled = false;
+    }
+}
+
+function uploadAndScan() {
+    if (!selectedFile) return;
+
+    const formData = new FormData();
+    formData.append('prescription_file', selectedFile);
+
+    document.getElementById('scanBtn').disabled = true;
+    document.getElementById('scanLoader').style.display = 'block';
+    document.getElementById('ocrResultsPanel').style.display = 'none';
+
+    fetch('/api/prescriptions/upload-ocr/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById('scanLoader').style.display = 'none';
+        document.getElementById('scanBtn').disabled = false;
+
+        if (data.success) {
+            renderExtractedData(data);
+        } else {
+            alert(data.error || 'OCR processing failed.');
+        }
+    })
+    .catch(err => {
+        document.getElementById('scanLoader').style.display = 'none';
+        document.getElementById('scanBtn').disabled = false;
+        alert('Server error processing prescription OCR.');
+    });
+}
+
+function renderExtractedData(data) {
+    document.getElementById('ocrResultsPanel').style.display = 'block';
+    if (data.doctor_info) {
+        if (data.doctor_info.doctor_name) document.getElementById('docName').textContent = data.doctor_info.doctor_name;
+        if (data.doctor_info.clinic_name) document.getElementById('clinicName').textContent = data.doctor_info.clinic_name;
+        if (data.doctor_info.date) document.getElementById('rxDate').textContent = data.doctor_info.date;
+    }
+
+    const tbody = document.getElementById('extractedTableBody');
+    tbody.innerHTML = '';
+
+    (data.medicines || []).forEach((med, idx) => {
+        const row = document.createElement('tr');
+        row.id = `rx-row-${idx}`;
+        row.innerHTML = `
+            <td>
+                <input type="text" class="table-input med-name-input" value="${med.name}">
+            </td>
+            <td>
+                <input type="text" class="table-input med-dosage-input" value="${med.dosage || ''}">
+            </td>
+            <td>
+                <input type="text" class="table-input med-freq-input" value="${med.frequency || ''}">
+            </td>
+            <td>
+                <input type="text" class="table-input med-dur-input" value="${med.duration || ''}">
+            </td>
+            <td>
+                <input type="number" class="table-input med-qty-input" value="1" min="1" max="10" style="width: 60px;">
+            </td>
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-outline single-rx-add-btn" onclick="addSingleRxToCart(this)" title="Add this medicine to cart">
+                        <i class="fa-solid fa-cart-plus text-teal"></i> Add to Cart
+                    </button>
+                    <button type="button" class="btn-icon text-danger" onclick="this.closest('tr').remove()" title="Remove">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    document.getElementById('ocrResultsPanel').scrollIntoView({ behavior: 'smooth' });
+}
+
+function addCustomRow() {
+    const tbody = document.getElementById('extractedTableBody');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="text" class="table-input med-name-input" placeholder="Medicine Name"></td>
+        <td><input type="text" class="table-input med-dosage-input" placeholder="Dosage (e.g. 500mg)"></td>
+        <td><input type="text" class="table-input med-freq-input" placeholder="Frequency (e.g. 1-0-1)"></td>
+        <td><input type="text" class="table-input med-dur-input" placeholder="Duration (e.g. 5 days)"></td>
+        <td><input type="number" class="table-input med-qty-input" value="1" min="1" max="10" style="width: 60px;"></td>
+        <td>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline single-rx-add-btn" onclick="addSingleRxToCart(this)" title="Add this medicine to cart">
+                    <i class="fa-solid fa-cart-plus text-teal"></i> Add to Cart
+                </button>
+                <button type="button" class="btn-icon text-danger" onclick="this.closest('tr').remove()"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+        </td>
+    `;
+    tbody.appendChild(row);
+}
+
+function addSingleRxToCart(btn) {
+    const row = btn.closest('tr');
+    if (!row) return;
+
+    const name = row.querySelector('.med-name-input')?.value.trim();
+    const dosage = row.querySelector('.med-dosage-input')?.value.trim();
+    const frequency = row.querySelector('.med-freq-input')?.value.trim();
+    const duration = row.querySelector('.med-dur-input')?.value.trim();
+    const quantity = parseInt(row.querySelector('.med-qty-input')?.value) || 1;
+
+    if (!name) {
+        alert('Please specify a medicine name.');
+        return;
+    }
+
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Adding...';
+
+    fetch('/api/prescriptions/verify-order/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+            medicines: [{
+                name: name,
+                dosage: dosage,
+                frequency: frequency,
+                duration: duration,
+                quantity: quantity
+            }]
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) {
+            btn.style.background = '#0d9488';
+            btn.style.color = '#ffffff';
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Added!';
+
+            // Update global cart badge in header
+            const badge = document.querySelector('.cart-count-badge');
+            if (badge && data.cart_count !== undefined) {
+                badge.textContent = data.cart_count;
+                badge.style.display = data.cart_count > 0 ? 'flex' : 'none';
+            }
+
+            if (typeof showToast === 'function') {
+                showToast(`<strong>${name}</strong> added to cart! <a href="/cart/" style="color: #0f766e; text-decoration: underline; font-weight: bold; margin-left: 6px;">View Cart &rarr;</a>`, 'success');
+            }
+
+            setTimeout(() => {
+                btn.style.background = '';
+                btn.style.color = '';
+                btn.innerHTML = originalHtml;
+            }, 3000);
+        } else {
+            alert(data.error || 'Failed to add medicine to cart.');
+            btn.innerHTML = originalHtml;
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        alert('Server communication error adding to cart.');
+    });
+}
+
+function orderVerifiedMedicines() {
+    const rows = document.querySelectorAll('#extractedTableBody tr');
+    const medicines = [];
+
+    rows.forEach(r => {
+        const name = r.querySelector('.med-name-input')?.value.trim();
+        const dosage = r.querySelector('.med-dosage-input')?.value.trim();
+        const frequency = r.querySelector('.med-freq-input')?.value.trim();
+        const duration = r.querySelector('.med-dur-input')?.value.trim();
+        const quantity = parseInt(r.querySelector('.med-qty-input')?.value) || 1;
+
+        if (name) {
+            medicines.push({ name, dosage, frequency, duration, quantity });
+        }
+    });
+
+    if (medicines.length === 0) {
+        alert('Please add at least one medicine to proceed.');
+        return;
+    }
+
+    const btn = document.getElementById('orderVerifiedBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Adding to Cart...';
+
+    fetch('/api/prescriptions/verify-order/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ medicines })
+    })
+    .then(res => res.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) {
+            alert(data.message);
+            window.location.href = '{% url "cart" %}';
+        } else {
+            alert(data.error || 'Failed to add medicines.');
+            btn.innerHTML = '<i class="fa-solid fa-cart-plus"></i> Confirm & Add Verified Medicines to Cart';
+        }
+    });
+}
+</script>
+{% endblock %}

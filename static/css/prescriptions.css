@@ -1,0 +1,179 @@
+/* ==========================================================================
+   MEDCONNECT – Modern Prescription Upload & OCR Scanner (prescriptions.css)
+   ========================================================================== */
+
+.ocr-upload-card {
+    margin-bottom: 2rem;
+}
+
+.ocr-badge {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--radius-full);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.dropzone-area {
+    border: 2px dashed #0d9488;
+    background: #f0fdfa;
+    border-radius: var(--radius-lg);
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.dropzone-area:hover {
+    background: #ccfbf1;
+    border-color: #0f766e;
+    transform: scale(1.005);
+}
+
+.dropzone-icon {
+    font-size: 3.2rem;
+    color: var(--primary);
+    margin-bottom: 0.85rem;
+}
+
+.dropzone-area h4 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.35rem;
+}
+
+.dropzone-hint {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+}
+
+.selected-file-name {
+    margin-top: 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+}
+
+.upload-btn-row {
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
+/* Scanner Animation Box */
+.scanning-loader-box {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    background: #f8fafc;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    margin-top: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.scanner-laser-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #0d9488, #2dd4bf, transparent);
+    box-shadow: 0 0 12px #2dd4bf;
+    animation: laserScan 2s infinite ease-in-out;
+}
+
+@keyframes laserScan {
+    0% { top: 0%; }
+    50% { top: 96%; }
+    100% { top: 0%; }
+}
+
+.spinner-border-custom {
+    width: 44px;
+    height: 44px;
+    border: 3.5px solid #ccfbf1;
+    border-top: 3.5px solid #0d9488;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem auto;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Extracted Results Panel */
+.results-banner-success {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1rem 1.25rem;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: var(--radius-md);
+    color: #065f46;
+    font-size: 0.95rem;
+    margin-top: 1.5rem;
+}
+
+.results-banner-success i {
+    font-size: 1.5rem;
+    color: #10b981;
+}
+
+.doctor-info-preview {
+    background: #ffffff;
+}
+
+.doc-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    padding: 1rem 1.25rem;
+}
+
+@media (max-width: 768px) {
+    .doc-info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.info-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.info-val {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Verified Table Input Elements */
+.table-input {
+    width: 100%;
+    padding: 0.45rem 0.65rem;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 0.88rem;
+    outline: none;
+    background: #ffffff;
+    transition: var(--transition);
+}
+
+.table-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
+}
+
+.verify-order-actions-bar {
+    text-align: right;
+}

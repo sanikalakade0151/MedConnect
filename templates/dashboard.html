@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard – MedConnect Healthcare{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=2.5">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+
+    <!-- WELCOME GREETING BANNER -->
+    <div class="welcome-banner">
+        <div class="welcome-text">
+            <h2>Welcome back, <span>{{ current_user.name|default:"Dr. Alex Morgan" }}</span> 👋</h2>
+            <p>Your unified healthcare dashboard. Track active deliveries, review digital prescriptions, and manage daily medication reminders.</p>
+        </div>
+        <div class="welcome-actions">
+            <a href="{% url 'prescriptions' %}" class="btn btn-primary">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Upload Prescription
+            </a>
+            <a href="{% url 'ai_tutor' %}" class="btn btn-secondary">
+                <i class="fa-solid fa-robot"></i> Ask AI Tutor
+            </a>
+        </div>
+    </div>
+
+    <!-- 4 CORE METRIC CARDS -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-icon bg-teal-light text-teal">
+                <i class="fa-solid fa-box"></i>
+            </div>
+            <div class="metric-details">
+                <span class="metric-label">Total Orders</span>
+                <h3 class="metric-value">{{ total_orders|default:"0" }}</h3>
+                <span class="metric-trend text-success"><i class="fa-solid fa-arrow-trend-up"></i> Lifetime history</span>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon bg-blue-light text-blue">
+                <i class="fa-solid fa-truck-fast"></i>
+            </div>
+            <div class="metric-details">
+                <span class="metric-label">Upcoming Deliveries</span>
+                <h3 class="metric-value">{{ upcoming_deliveries|default:"1" }}</h3>
+                <span class="metric-trend text-primary"><i class="fa-solid fa-location-crosshairs"></i> In Transit</span>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon bg-amber-light text-amber">
+                <i class="fa-solid fa-clock"></i>
+            </div>
+            <div class="metric-details">
+                <span class="metric-label">Medicine Reminders</span>
+                <h3 class="metric-value">{{ active_reminders|default:"3" }}</h3>
+                <span class="metric-trend text-muted"><i class="fa-solid fa-bell"></i> Scheduled for today</span>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon bg-purple-light text-purple">
+                <i class="fa-solid fa-arrows-spin"></i>
+            </div>
+            <div class="metric-details">
+                <span class="metric-label">Active Subscriptions</span>
+                <h3 class="metric-value">{{ active_subscriptions|default:"2" }}</h3>
+                <span class="metric-trend text-success"><i class="fa-solid fa-check"></i> Auto-refill active</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN TWO-COLUMN DASHBOARD GRID -->
+    <div class="dashboard-main-grid">
+        <!-- LEFT COLUMN: LIVE TRACKING & RECENT ORDERS -->
+        <div class="dashboard-left-col">
+            
+            <!-- LIVE ORDER TRACKING CARD -->
+            {% if active_tracking %}
+            <div class="card live-tracking-widget">
+                <div class="card-header flex-between">
+                    <div class="card-title-group">
+                        <span class="live-pill"><span class="pulse-dot"></span> Live GPS Tracking</span>
+                        <h4>Order #{{ active_tracking.order_number }}</h4>
+                    </div>
+                    <a href="{% url 'tracking' %}?order={{ active_tracking.order_number }}" class="btn btn-outline btn-sm">
+                        Open Full Live Map <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="tracking-summary-row">
+                        <div class="driver-profile">
+                            <img src="{{ active_tracking.driver.photo|default:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100' }}" alt="Driver Photo" class="driver-avatar">
+                            <div>
+                                <h5>{{ active_tracking.driver.name }}</h5>
+                                <p><i class="fa-solid fa-motorcycle"></i> {{ active_tracking.driver.vehicle }} &bull; <span class="rating">{{ active_tracking.driver.rating }}</span></p>
+                            </div>
+                        </div>
+                        <div class="eta-box">
+                            <span class="eta-title">Estimated Arrival</span>
+                            <div class="eta-time"><span id="widgetEtaMinutes">{{ active_tracking.eta_minutes|default:"14" }}</span> mins</div>
+                            <span class="eta-dist">{{ active_tracking.distance_km|default:"2.4" }} km remaining</span>
+                        </div>
+                    </div>
+
+                    <!-- Mini Step Tracker -->
+                    <div class="timeline-steps">
+                        {% for step in active_tracking.steps %}
+                        <div class="timeline-step {% if step.done %}completed{% elif forloop.counter == active_tracking.current_step %}current{% endif %}">
+                            <div class="step-indicator">
+                                <i class="fa-solid {% if step.done %}fa-check{% else %}fa-circle{% endif %}"></i>
+                            </div>
+                            <div class="step-info">
+                                <div class="step-title">{{ step.title }}</div>
+                                <div class="step-time">{{ step.time }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- RECENT ORDERS -->
+            <div class="card">
+                <div class="card-header flex-between">
+                    <h4><i class="fa-solid fa-box"></i> Recent Orders</h4>
+                    <a href="{% url 'orders' %}" class="card-link">View All ({{ total_orders }})</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Date</th>
+                                    <th>Items</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ord in recent_orders %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'order_detail' ord.order_number %}" class="order-link-code">
+                                            <strong>{{ ord.order_number }}</strong>
+                                        </a>
+                                    </td>
+                                    <td>{{ ord.created_at|slice:":10" }}</td>
+                                    <td>{{ ord.items|length }} medicine(s)</td>
+                                    <td><strong>₹{{ ord.total_amount|floatformat:2 }}</strong></td>
+                                    <td>
+                                        <span class="badge {% if ord.status == 'Delivered' %}badge-success{% elif ord.status == 'Out for Delivery' %}badge-warning{% else %}badge-info{% endif %}">
+                                            {{ ord.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-btn-group">
+                                            <a href="{% url 'order_detail' ord.order_number %}" class="btn-icon" title="View Order">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'tracking' %}?order={{ ord.order_number }}" class="btn-icon text-primary" title="Live Track">
+                                                <i class="fa-solid fa-location-crosshairs"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">No recent orders found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- POPULAR MEDICINE CATEGORIES -->
+            <div class="card">
+                <div class="card-header flex-between">
+                    <h4><i class="fa-solid fa-table-cells-large"></i> Popular Healthcare Categories</h4>
+                    <a href="{% url 'categories' %}" class="card-link">Explore All 8 Categories</a>
+                </div>
+                <div class="card-body">
+                    <div class="categories-grid-compact">
+                        {% for cat in popular_categories %}
+                        <a href="{% url 'medicines' %}?category={{ cat.slug }}" class="category-card-compact">
+                            <div class="cat-icon-wrap" style="background-color: {{ cat.bg_color }}; color: {{ cat.color }};">
+                                <i class="fa-solid {{ cat.icon }}"></i>
+                            </div>
+                            <span class="cat-name">{{ cat.name }}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: REMINDERS & OFFERS & AI SHORTCUT -->
+        <div class="dashboard-right-col">
+            
+            <!-- TODAY'S MEDICINE REMINDERS -->
+            <div class="card">
+                <div class="card-header flex-between">
+                    <h4><i class="fa-solid fa-clock"></i> Today's Schedule</h4>
+                    <a href="{% url 'reminders' %}" class="card-link">Manage</a>
+                </div>
+                <div class="card-body">
+                    <div class="reminders-list">
+                        {% for rem in today_reminders %}
+                        <div class="reminder-item {% if rem.is_taken %}taken{% endif %}" id="remItem-{{ rem.id }}">
+                            <div class="rem-time-tag">{{ rem.scheduled_time }}</div>
+                            <div class="rem-details">
+                                <h6 class="rem-med-name">{{ rem.medicine_name }}</h6>
+                                <p class="rem-dosage"><i class="fa-solid fa-capsules"></i> {{ rem.dosage }} &bull; {{ rem.instruction }}</p>
+                            </div>
+                            <button class="rem-take-btn {% if rem.is_taken %}taken{% endif %}" onclick="toggleReminder('{{ rem.id }}')" title="Mark as Taken">
+                                <i class="fa-solid {% if rem.is_taken %}fa-circle-check{% else %}fa-circle{% endif %}"></i>
+                            </button>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted text-center py-3">No reminders scheduled for today.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI MEDICAL TUTOR SHORTCUT CARD -->
+            <div class="card ai-tutor-promo-card">
+                <div class="ai-card-glow"></div>
+                <div class="ai-badge-top"><i class="fa-solid fa-sparkles"></i> 24/7 AI Medical Assistant</div>
+                <h5>Have Questions About Your Medication?</h5>
+                <p>Instant answers on drug composition, correct dosages, food contraindications, and safety warnings.</p>
+                <form action="{% url 'ai_tutor' %}" method="GET" class="ai-quick-input">
+                    <input type="text" name="q" placeholder="E.g. What is Pan 40 used for?">
+                    <button type="submit"><i class="fa-solid fa-paper-plane"></i></button>
+                </form>
+            </div>
+
+            <!-- OFFERS & COUPONS BANNER -->
+            <div class="card">
+                <div class="card-header flex-between">
+                    <h4><i class="fa-solid fa-tags"></i> Featured Coupons</h4>
+                    <a href="{% url 'offers' %}" class="card-link">All Offers</a>
+                </div>
+                <div class="card-body">
+                    <div class="offers-stack">
+                        {% for off in offers %}
+                        <div class="coupon-card-mini">
+                            <div class="coupon-cutout-left"></div>
+                            <div class="coupon-cutout-right"></div>
+                            <div class="coupon-top">
+                                <span class="coupon-code">{{ off.code }}</span>
+                                <button class="copy-btn-mini" onclick="copyCouponCode('{{ off.code }}')">Copy</button>
+                            </div>
+                            <div class="coupon-desc">{{ off.description }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleReminder(remId) {
+    fetch('/api/reminders/toggle/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ reminder_id: remId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const item = document.getElementById(`remItem-${remId}`);
+            if (item) {
+                if (data.is_taken) {
+                    item.classList.add('taken');
+                    item.querySelector('.rem-take-btn').classList.add('taken');
+                    item.querySelector('.rem-take-btn i').className = 'fa-solid fa-circle-check';
+                } else {
+                    item.classList.remove('taken');
+                    item.querySelector('.rem-take-btn').classList.remove('taken');
+                    item.querySelector('.rem-take-btn i').className = 'fa-solid fa-circle';
+                }
+            }
+        }
+    });
+}
+
+function copyCouponCode(code) {
+    navigator.clipboard.writeText(code).then(() => {
+        alert(`Coupon code "${code}" copied to clipboard! You can apply it at checkout.`);
+    });
+}
+</script>
+{% endblock %}

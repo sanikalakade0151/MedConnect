@@ -1,0 +1,163 @@
+/* ==========================================================================
+   MEDCONNECT – Modern Orders & Invoice Styles (orders.css)
+   ========================================================================== */
+
+.orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.order-card {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.order-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary);
+}
+
+.order-num-badge {
+    background: #f1f5f9;
+    color: var(--text-primary);
+    font-weight: 800;
+    font-size: 0.95rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--radius-sm);
+}
+
+.order-date-text {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-left: 0.5rem;
+}
+
+.order-items-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-bottom: 1.25rem;
+}
+
+.order-item-chip {
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.45rem 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.order-item-chip .item-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.order-item-chip .item-qty {
+    background: #e2e8f0;
+    color: var(--text-secondary);
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--radius-full);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.order-item-chip .item-price {
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.order-card-meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+    .order-card-meta {
+        grid-template-columns: 1fr;
+    }
+}
+
+.meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.meta-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.order-actions-btn-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Order Detail & Invoice View */
+.order-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 1.75rem;
+    align-items: start;
+}
+
+@media (max-width: 992px) {
+    .order-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.driver-info-box {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.driver-meta h5 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+
+.driver-meta p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.order-meta-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    font-size: 0.88rem;
+}
+
+.order-meta-box .meta-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.order-meta-box .label {
+    color: var(--text-muted);
+}
+
+.order-meta-box .val {
+    color: var(--text-primary);
+    text-align: right;
+    max-width: 220px;
+}

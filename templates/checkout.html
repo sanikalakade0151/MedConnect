@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Checkout – MedConnect{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/checkout.css' %}?v=2.5">
+{% endblock %}
+
+{% block content %}
+<div class="checkout-page-wrapper">
+
+    <div class="page-top-bar">
+        <div>
+            <h2>Secure Checkout</h2>
+            <p>Select your delivery destination and preferred payment method.</p>
+        </div>
+        <div>
+            <a href="{% url 'cart' %}" class="btn btn-outline">
+                <i class="fa-solid fa-cart-shopping"></i> Back to Cart
+            </a>
+        </div>
+    </div>
+
+    <form method="POST" action="{% url 'checkout' %}" id="checkoutForm">
+        {% csrf_token %}
+
+        <div class="checkout-layout-grid">
+            <!-- LEFT: ADDRESS & PAYMENT SELECTION -->
+            <div class="checkout-main-col">
+                
+                <!-- 1. DELIVERY ADDRESS SELECTION -->
+                <div class="card checkout-section-card">
+                    <div class="card-header flex-between">
+                        <h4><i class="fa-solid fa-map-location-dot text-teal"></i> 1. Select Delivery Address</h4>
+                        <a href="{% url 'addresses' %}" class="card-link" target="_blank">+ Add New Address</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="address-options-list">
+                            {% for addr in addresses %}
+                            <label class="address-radio-card {% if addr.is_default or forloop.first %}selected{% endif %}">
+                                <input type="radio" name="address_id" value="{{ addr.id }}" {% if addr.is_default or forloop.first %}checked{% endif %}>
+                                <div class="addr-card-content">
+                                    <div class="addr-top">
+                                        <span class="addr-label-badge">{{ addr.label }}</span>
+                                        <span class="recipient-name">{{ addr.recipient_name }} &bull; {{ addr.phone }}</span>
+                                    </div>
+                                    <div class="addr-text">
+                                        {{ addr.street }}, {{ addr.city }}, {{ addr.state }} - {{ addr.postal_code }}
+                                    </div>
+                                </div>
+                            </label>
+                            {% empty %}
+                            <div class="default-address-box">
+                                <strong>Default Home Address:</strong>
+                                <p>742 Evergreen Terrace, Apt 4B, Springfield, IL 62704</p>
+                                <input type="hidden" name="address_id" value="default_home">
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- NEW / CUSTOM DELIVERY ADDRESS INPUT -->
+                        <div class="mt-3 pt-3" style="border-top: 1px dashed var(--border-color);">
+                            <label class="address-radio-card" id="customAddrCard" style="cursor: pointer;">
+                                <input type="radio" name="address_id" id="addr_custom_radio" value="custom">
+                                <div class="addr-card-content" style="width: 100%;">
+                                    <div class="addr-top">
+                                        <span class="addr-label-badge" style="background: #0d9488; color: white;"><i class="fa-solid fa-plus"></i> New</span>
+                                        <span class="recipient-name">Deliver to a Different / Custom Address</span>
+                                    </div>
+                                    <div id="customAddressInputWrap" style="display: none; margin-top: 0.75rem;">
+                                        <textarea name="custom_address" id="customAddressInput" class="form-input" rows="2" placeholder="Enter full address: Flat/House No, Building, Landmark, City, State, PIN Code (e.g., Flat 402, Sunshine Heights, Indiranagar, Bengaluru, Karnataka 560038)"></textarea>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. PAYMENT METHOD SELECTION -->
+                <div class="card checkout-section-card">
+                    <div class="card-header">
+                        <h4><i class="fa-solid fa-credit-card text-teal"></i> 2. Select Payment Method</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="payment-methods-grid">
+                            <!-- Card Option -->
+                            <label class="payment-option-card selected">
+                                <input type="radio" name="payment_method" value="Credit/Debit Card (Visa •••• 4242)" checked>
+                                <div class="pm-icon-wrap text-primary">
+                                    <i class="fa-solid fa-credit-card"></i>
+                                </div>
+                                <div class="pm-info">
+                                    <div class="pm-title">Credit / Debit Card</div>
+                                    <div class="pm-desc">Visa ending in 4242 (Instant 1-Click Pay)</div>
+                                </div>
+                            </label>
+
+                            <!-- UPI Option -->
+                            <label class="payment-option-card">
+                                <input type="radio" name="payment_method" value="UPI Instant (Google Pay / PhonePe)" onchange="toggleCheckoutQr(true)">
+                                <div class="pm-icon-wrap text-success">
+                                    <i class="fa-solid fa-qrcode"></i>
+                                </div>
+                                <div class="pm-info">
+                                    <div class="pm-title">UPI / QR Code Scan & Pay</div>
+                                    <div class="pm-desc">Google Pay, PhonePe, Paytm, BHIM</div>
+                                </div>
+                            </label>
+
+                            <!-- COD Option -->
+                            <label class="payment-option-card">
+                                <input type="radio" name="payment_method" value="Cash on Delivery (COD)" onchange="toggleCheckoutQr(false)">
+                                <div class="pm-icon-wrap text-amber">
+                                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                                </div>
+                                <div class="pm-info">
+                                    <div class="pm-title">Cash on Delivery (COD)</div>
+                                    <div class="pm-desc">Pay cash or card to driver upon delivery</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- DYNAMIC UPI QR CODE CONTAINER -->
+                        <div id="checkoutQrContainer" class="card mt-3 p-3 text-center" style="display: none; background: #f0fdfa; border: 1.5px dashed #0d9488; border-radius: 12px;">
+                            <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                                <span class="badge badge-teal"><i class="fa-solid fa-qrcode"></i> Instant Dynamic QR</span>
+                                <span class="text-muted small">Payable: <strong class="text-teal">₹{{ total|floatformat:2 }}</strong></span>
+                            </div>
+                            <div class="my-2">
+                                <img id="checkoutQrImg" 
+                                     src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi%3A%2F%2Fpay%3Fpa%3Dmedconnect.health%40okhdfcbank%26pn%3DMedConnect%2520Pharmacy%26am%3D{{ total|floatformat:2 }}%26cu%3DINR" 
+                                     alt="Checkout QR Code" 
+                                     style="width: 170px; height: 170px; border-radius: 10px; border: 3px solid #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.12);"
+                                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'170\' height=\'170\' viewBox=\'0 0 170 170\'><rect width=\'170\' height=\'170\' fill=\'white\'/><rect x=\'15\' y=\'15\' width=\'40\' height=\'40\' fill=\'%230d9488\'/><rect x=\'115\' y=\'15\' width=\'40\' height=\'40\' fill=\'%230d9488\'/><rect x=\'15\' y=\'115\' width=\'40\' height=\'40\' fill=\'%230d9488\'/><text x=\'85\' y=\'90\' font-size=\'10\' text-anchor=\'middle\' fill=\'%23072a2a\'>SCAN TO PAY</text></svg>'">
+                            </div>
+                            <p class="small text-muted mb-1">Scan using Google Pay, PhonePe, Paytm, BHIM, or any banking app.</p>
+                            <div class="small text-teal font-bold"><i class="fa-solid fa-clock"></i> QR valid for: <span id="qrCountdown">09:59</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. DELIVERY INSTRUCTIONS -->
+                <div class="card checkout-section-card">
+                    <div class="card-header">
+                        <h4><i class="fa-solid fa-comment-medical text-teal"></i> Delivery Instructions (Optional)</h4>
+                    </div>
+                    <div class="card-body">
+                        <textarea name="notes" rows="2" class="form-textarea" placeholder="E.g., Ring bell twice, leave with security, call upon arrival..."></textarea>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT: ORDER SUMMARY & PLACE ORDER -->
+            <div class="checkout-summary-col">
+                <div class="card summary-card">
+                    <div class="card-header">
+                        <h4>Order Overview</h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- ITEMS MINI LIST -->
+                        <div class="checkout-items-mini">
+                            {% for item in cart_items %}
+                            <div class="checkout-mini-row">
+                                <div class="mini-item-name">
+                                    <strong>{{ item.name }}</strong>
+                                    <span class="mini-item-qty">Qty: {{ item.quantity }}</span>
+                                </div>
+                                <div class="mini-item-price">
+                                    ₹{% widthratio item.price 1 item.quantity as item_sub %}{{ item_sub|floatformat:2 }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- COUPON CODE SECTION -->
+                        <div class="coupon-box-checkout">
+                            <div class="coupon-input-group">
+                                <input type="text" id="couponInput" placeholder="Enter Promo Code" value="{{ coupon_code }}">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="applyCoupon()">Apply</button>
+                            </div>
+                            {% if applied_offer %}
+                            <div class="coupon-success-tag">
+                                <i class="fa-solid fa-circle-check"></i> Coupon <strong>{{ applied_offer.code }}</strong> applied! ({{ applied_offer.discount_percentage }}% discount)
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- TOTALS BREAKDOWN -->
+                        <div class="checkout-totals-box">
+                            <div class="summary-line">
+                                <span>Subtotal</span>
+                                <strong>₹{{ subtotal|floatformat:2 }}</strong>
+                            </div>
+
+                            {% if discount > 0 %}
+                            <div class="summary-line text-success">
+                                <span>Discount</span>
+                                <strong>-₹{{ discount|floatformat:2 }}</strong>
+                            </div>
+                            {% endif %}
+
+                            <div class="summary-line">
+                                <span>Express Delivery Fee</span>
+                                <span>
+                                    {% if delivery_fee == 0 %}
+                                    <span class="text-success font-bold">FREE</span>
+                                    {% else %}
+                                    ₹{{ delivery_fee|floatformat:2 }}
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            <hr class="summary-divider">
+
+                            <div class="summary-total-line">
+                                <span>Total Amount</span>
+                                <h3 class="text-teal">₹{{ total|floatformat:2 }}</h3>
+                            </div>
+                        </div>
+
+                        <!-- PLACE ORDER BUTTON -->
+                        <button type="submit" class="btn btn-primary btn-lg w-100 place-order-btn">
+                            <i class="fa-solid fa-lock"></i> Place Order (₹{{ total|floatformat:2 }})
+                        </button>
+
+                        <div class="live-tracking-guarantee-note">
+                            <i class="fa-solid fa-location-crosshairs text-primary"></i> Live GPS Map tracking will activate immediately after placing your order.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </form>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function applyCoupon() {
+    const code = document.getElementById('couponInput').value.trim();
+    if (!code) {
+        alert('Please enter a coupon code.');
+        return;
+    }
+    window.location.href = `{% url 'checkout' %}?coupon=${encodeURIComponent(code)}`;
+}
+
+// Visual radio selection toggle
+document.querySelectorAll('.payment-option-card').forEach(card => {
+    card.addEventListener('click', function() {
+        document.querySelectorAll('.payment-option-card').forEach(c => c.classList.remove('selected'));
+        this.classList.add('selected');
+        const radio = this.querySelector('input[type="radio"]');
+        if (radio) {
+            radio.checked = true;
+            toggleCheckoutQr(radio.value.includes('UPI'));
+        }
+    });
+});
+
+let qrTimerInterval = null;
+function toggleCheckoutQr(show) {
+    const container = document.getElementById('checkoutQrContainer');
+    if (!container) return;
+    if (show) {
+        container.style.display = 'block';
+        startQrCountdown();
+    } else {
+        container.style.display = 'none';
+        if (qrTimerInterval) clearInterval(qrTimerInterval);
+    }
+}
+
+function startQrCountdown() {
+    let timeLeft = 600; // 10 minutes
+    const display = document.getElementById('qrCountdown');
+    if (qrTimerInterval) clearInterval(qrTimerInterval);
+    qrTimerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            clearInterval(qrTimerInterval);
+            if (display) display.textContent = 'Expired. Refresh to regenerate.';
+        } else {
+            const m = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+            const s = String(timeLeft % 60).padStart(2, '0');
+            if (display) display.textContent = `${m}:${s}`;
+        }
+    }, 1000);
+}
+// Address radio selection handler
+document.querySelectorAll('input[name="address_id"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.querySelectorAll('.address-radio-card').forEach(c => c.classList.remove('selected'));
+        const parentCard = this.closest('.address-radio-card');
+        if (parentCard) parentCard.classList.add('selected');
+
+        const customWrap = document.getElementById('customAddressInputWrap');
+        if (customWrap) {
+            if (this.value === 'custom') {
+                customWrap.style.display = 'block';
+                const input = document.getElementById('customAddressInput');
+                if (input) input.focus();
+            } else {
+                customWrap.style.display = 'none';
+            }
+        }
+    });
+});
+
+const customInput = document.getElementById('customAddressInput');
+if (customInput) {
+    customInput.addEventListener('focus', function() {
+        const customRadio = document.getElementById('addr_custom_radio');
+        if (customRadio) {
+            customRadio.checked = true;
+            customRadio.dispatchEvent(new Event('change'));
+        }
+    });
+}
+</script>
+{% endblock %}

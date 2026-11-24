@@ -1,0 +1,341 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MedConnect – Smart Healthcare Dashboard{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Leaflet CSS for Map Tracking fallback/styling -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Core Application CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2.5">
+    {% block extra_css %}{% endblock %}
+    <!-- CSRF Token for JavaScript Fetch -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- 1. DARK TEAL / GREEN LEFT SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="{% url 'dashboard' %}" class="sidebar-brand">
+                    <i class="fa-solid fa-staff-snake"></i>
+                    <span>MedConnect</span>
+                </a>
+                <button class="sidebar-close-btn" id="sidebarCloseBtn">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- ALL 15 SIDEBAR ITEMS -->
+            <ul class="sidebar-menu">
+                <li class="menu-category">Main Menu</li>
+                
+                <!-- 1. Dashboard -->
+                <li class="sidebar-item">
+                    <a href="{% url 'dashboard' %}" class="sidebar-link {% if current_path == '/' or current_path == '/dashboard/' %}active{% endif %}">
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+
+                <!-- 2. Medicines -->
+                <li class="sidebar-item">
+                    <a href="{% url 'medicines' %}" class="sidebar-link {% if '/medicines' in current_path %}active{% endif %}">
+                        <i class="fa-solid fa-pills"></i>
+                        <span>Medicines</span>
+                    </a>
+                </li>
+
+                <!-- 3. Categories -->
+                <li class="sidebar-item">
+                    <a href="{% url 'categories' %}" class="sidebar-link {% if '/categories' in current_path %}active{% endif %}">
+                        <i class="fa-solid fa-table-cells-large"></i>
+                        <span>Categories</span>
+                    </a>
+                </li>
+
+                <!-- 4. My Orders -->
+                <li class="sidebar-item">
+                    <a href="{% url 'orders' %}" class="sidebar-link {% if '/orders' in current_path %}active{% endif %}">
+                        <i class="fa-solid fa-box"></i>
+                        <span>My Orders</span>
+                    </a>
+                </li>
+
+                <li class="menu-category">Smart Healthcare</li>
+
+                <!-- 5. Prescriptions -->
+                <li class="sidebar-item">
+                    <a href="{% url 'prescriptions' %}" class="sidebar-link {% if '/prescriptions' in current_path %}active{% endif %}">
+                        <i class="fa-solid fa-file-prescription"></i>
+                        <span>Prescriptions</span>
+                    </a>
+                </li>
+
+                <!-- 6. Reminders -->
+                <li class="sidebar-item">
+                    <a href="{% url 'reminders' %}" class="sidebar-link {% if '/reminders' in current_path %}active{% endif %}">
+                        <i class="fa-solid fa-clock"></i>
+                        <span>Reminders</span>
+                    </a>
+                </li>
+
+                <!-- 7. Subscriptions -->
+                <li class="sidebar-item">
+                    <a href="{% url 'subscriptions' %}" class="sidebar-link {% if '/subscriptions' in current_path %}active{% endif %}">
+                        <i class="fa-solid fa-arrows-spin"></i>
+                        <span>Subscriptions</span>
+                    </a>
+                </li>
+
+                <!-- 8. Tracking -->
+                <li class="sidebar-item">
+                    <a href="{% url 'tracking' %}" class="sidebar-link {% if '/tracking' in current_path %}active{% endif %}">
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                        <span>Tracking</span>
+                        <span class="sidebar-badge live-pulse">Live</span>
+                    </a>
+                </li>
+
+                <!-- 9. Wishlist -->
+                <li class="sidebar-item">
+                    <a href="{% url 'wishlist' %}" class="sidebar-link {% if '/wishlist' in current_path %}active{% endif %}">
+                        <i class="fa-solid fa-heart"></i>
+                        <span>Wishlist</span>
+                        <span class="sidebar-badge" id="sidebarWishlistBadge">{{ wishlist_count }}</span>
+                    </a>
+                </li>
+
+                <!-- 10. Offers & Coupons -->
+                <li class="sidebar-item">
+                    <a href="{% url 'offers' %}" class="sidebar-link {% if '/offers' in current_path %}active{% endif %}">
+                        <i class="fa-solid fa-tags"></i>
+                        <span>Offers & Coupons</span>
+                    </a>
+                </li>
+
+                <!-- 11. AI Tutor -->
+                <li class="sidebar-item">
+                    <a href="{% url 'ai_tutor' %}" class="sidebar-link {% if '/ai-tutor' in current_path %}active{% endif %}">
+                        <i class="fa-solid fa-robot"></i>
+                        <span>AI Tutor</span>
+                        <span class="sidebar-badge ai-badge">AI</span>
+                    </a>
+                </li>
+
+                <li class="menu-category">Account & Settings</li>
+
+                <!-- 12. Addresses -->
+                <li class="sidebar-item">
+                    <a href="{% url 'addresses' %}" class="sidebar-link {% if '/addresses' in current_path %}active{% endif %}">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                        <span>Addresses</span>
+                    </a>
+                </li>
+
+                <!-- 13. Payment Methods -->
+                <li class="sidebar-item">
+                    <a href="{% url 'payment_methods' %}" class="sidebar-link {% if '/payment-methods' in current_path %}active{% endif %}">
+                        <i class="fa-solid fa-credit-card"></i>
+                        <span>Payment Methods</span>
+                    </a>
+                </li>
+
+                <!-- 14. Profile -->
+                <li class="sidebar-item">
+                    <a href="{% url 'profile' %}" class="sidebar-link {% if '/profile' in current_path %}active{% endif %}">
+                        <i class="fa-solid fa-user-doctor"></i>
+                        <span>Profile</span>
+                    </a>
+                </li>
+
+                <!-- 15. Logout -->
+                <li class="sidebar-item">
+                    <a href="{% url 'logout' %}" class="sidebar-link text-danger-hover">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Sidebar User Profile Footer -->
+            <div class="sidebar-footer">
+                <a href="{% url 'profile' %}" class="user-profile-badge">
+                    <div class="avatar">
+                        {% if current_user and current_user.name %}
+                            {{ current_user.name|slice:":1" }}
+                        {% else %}
+                            M
+                        {% endif %}
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name">{{ current_user.name|default:"Dr. Alex Morgan" }}</div>
+                        <div class="user-role">{{ current_user.email|default:"demo@medconnect.com" }}</div>
+                    </div>
+                </a>
+            </div>
+        </aside>
+
+        <!-- MAIN VIEW CONTENT AREA -->
+        <main class="main-content">
+            <!-- WHITE TOP NAVIGATION BAR -->
+            <header class="dashboard-header">
+                <div class="header-left">
+                    <button class="mobile-toggle" id="mobileMenuToggle" aria-label="Toggle Navigation">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <!-- Search Bar for Medicines -->
+                    <form action="{% url 'medicines' %}" method="GET" class="header-search">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" name="q" placeholder="Search medicines, salts, syrups..." value="{{ request.GET.q }}">
+                    </form>
+                </div>
+
+                <div class="header-actions">
+                    <!-- Notifications Dropdown -->
+                    <div class="header-dropdown-wrap">
+                        <button class="header-icon-btn" id="notifBtn" aria-label="Notifications">
+                            <i class="fa-regular fa-bell"></i>
+                            <span class="icon-badge">2</span>
+                        </button>
+                        <div class="dropdown-menu-custom notif-dropdown" id="notifDropdown">
+                            <div class="dropdown-header">
+                                <h6>Notifications</h6>
+                                <span class="badge bg-teal">2 New</span>
+                            </div>
+                            <div class="dropdown-body">
+                                <div class="notif-item">
+                                    <div class="notif-icon bg-success-light text-success">
+                                        <i class="fa-solid fa-truck-fast"></i>
+                                    </div>
+                                    <div class="notif-content">
+                                        <div class="notif-title">Order Out for Delivery</div>
+                                        <div class="notif-text">Driver David is 2.1 km away with your order.</div>
+                                        <span class="notif-time">8 mins ago</span>
+                                    </div>
+                                </div>
+                                <div class="notif-item">
+                                    <div class="notif-icon bg-primary-light text-primary">
+                                        <i class="fa-solid fa-capsules"></i>
+                                    </div>
+                                    <div class="notif-content">
+                                        <div class="notif-title">Medicine Reminder</div>
+                                        <div class="notif-text">Time to take Metformin 500mg with water.</div>
+                                        <span class="notif-time">30 mins ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="dropdown-footer">
+                                <a href="{% url 'reminders' %}">View All Reminders</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cart Shortcut Icon -->
+                    <a href="{% url 'cart' %}" class="header-icon-btn cart-icon-btn" aria-label="Shopping Cart">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                        <span class="icon-badge cart-count-badge" id="headerCartBadge">{{ cart_count }}</span>
+                    </a>
+
+                    <!-- User Profile Dropdown -->
+                    <div class="header-user-wrap header-dropdown-wrap">
+                        <button type="button" class="header-user-btn" id="userProfileBtn" aria-label="User Profile Dropdown">
+                            <div class="avatar avatar-sm">
+                                {% if current_user and current_user.name %}
+                                    {{ current_user.name|slice:":1" }}
+                                {% else %}
+                                    M
+                                {% endif %}
+                            </div>
+                            <span class="header-user-name">{{ current_user.name|default:"Dr. Alex Morgan" }}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu-custom user-profile-dropdown" id="userProfileDropdown">
+                            <div class="dropdown-header user-dropdown-header">
+                                <div class="avatar avatar-md">
+                                    {% if current_user and current_user.name %}{{ current_user.name|slice:":1" }}{% else %}M{% endif %}
+                                </div>
+                                <div class="user-dropdown-meta">
+                                    <div class="font-bold text-dark">{{ current_user.name|default:"Dr. Alex Morgan" }}</div>
+                                    <small class="text-muted">{{ current_user.email|default:"demo@medconnect.com" }}</small>
+                                    <div><span class="badge badge-teal mt-1"><i class="fa-solid fa-circle-check"></i> Verified Account</span></div>
+                                </div>
+                            </div>
+                            <div class="dropdown-body p-2">
+                                <a href="{% url 'profile' %}" class="user-dropdown-item">
+                                    <i class="fa-solid fa-user-doctor text-teal"></i>
+                                    <span>My Profile & Medical Tags</span>
+                                </a>
+                                <a href="{% url 'orders' %}" class="user-dropdown-item">
+                                    <i class="fa-solid fa-box text-primary"></i>
+                                    <span>My Orders</span>
+                                </a>
+                                <a href="{% url 'prescriptions' %}" class="user-dropdown-item">
+                                    <i class="fa-solid fa-file-prescription text-warning"></i>
+                                    <span>Digital Prescriptions</span>
+                                </a>
+                                <a href="{% url 'addresses' %}" class="user-dropdown-item">
+                                    <i class="fa-solid fa-map-location-dot text-info"></i>
+                                    <span>Saved Addresses</span>
+                                </a>
+                            </div>
+                            <div class="dropdown-footer">
+                                <a href="{% url 'logout' %}" class="text-danger font-bold d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                                    <span>Sign Out</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- FLASH / TOAST MESSAGES -->
+            {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                <div class="alert-banner alert-{{ message.tags }}">
+                    <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+                    <span>{{ message }}</span>
+                    <button class="alert-close" onclick="this.parentElement.remove();">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- PAGE CONTENT BLOCK -->
+            <div class="page-body">
+                {% block content %}{% endblock %}
+            </div>
+
+            <!-- SHARED HEALTHCARE FOOTER -->
+            <footer class="app-footer">
+                <div class="footer-inner">
+                    <p>&copy; 2026 <strong>MedConnect</strong> – Licensed Digital Pharmacy & Healthcare System. Powered by Python Django & MongoDB.</p>
+                    <div class="footer-links">
+                        <a href="{% url 'ai_tutor' %}"><i class="fa-solid fa-robot"></i> AI Tutor</a>
+                        <a href="{% url 'prescriptions' %}"><i class="fa-solid fa-wand-magic-sparkles"></i> OCR Scanner</a>
+                        <a href="{% url 'tracking' %}"><i class="fa-solid fa-location-dot"></i> Live Tracking</a>
+                    </div>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Core Scripts -->
+    <script>
+        window.MEDCONNECT_GLOBAL_REMINDERS = {{ global_reminders|default:"[]"|safe }};
+    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{% static 'js/main.js' %}?v=2.6"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

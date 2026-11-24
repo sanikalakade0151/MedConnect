@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Healthcare Categories – MedConnect{% endblock %}
+
+{% block content %}
+<div class="categories-page-container">
+
+    <div class="page-top-bar">
+        <div>
+            <h2>Healthcare Categories</h2>
+            <p>Browse medications, health supplements, and therapeutic products organized by medical specialty.</p>
+        </div>
+        <div class="top-bar-action">
+            <a href="{% url 'medicines' %}" class="btn btn-outline">
+                <i class="fa-solid fa-pills"></i> View All Medicines
+            </a>
+        </div>
+    </div>
+
+    <div class="categories-large-grid">
+        {% for cat in categories %}
+        <div class="cat-card-large">
+            <div class="cat-card-header" style="background-color: {{ cat.bg_color }};">
+                <div class="cat-card-icon" style="color: {{ cat.color }};">
+                    <i class="fa-solid {{ cat.icon }}"></i>
+                </div>
+                <span class="cat-items-badge">{{ cat.medicine_count }} Available Products</span>
+            </div>
+            <div class="cat-card-body">
+                <h3>{{ cat.name }}</h3>
+                <p>{{ cat.description }}</p>
+                <div class="cat-card-footer">
+                    <a href="{% url 'medicines' %}?category={{ cat.slug }}" class="btn btn-outline btn-sm w-100">
+                        Explore {{ cat.name }} <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

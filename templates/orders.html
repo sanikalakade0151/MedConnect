@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Orders – MedConnect{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/orders.css' %}?v=2.5">
+{% endblock %}
+
+{% block content %}
+<div class="orders-page-wrapper">
+
+    <div class="page-top-bar">
+        <div>
+            <h2>My Medicine Orders</h2>
+            <p>Track current shipments, review past order invoices, and quickly reorder essentials.</p>
+        </div>
+        <div>
+            <a href="{% url 'medicines' %}" class="btn btn-primary">
+                <i class="fa-solid fa-cart-plus"></i> New Order
+            </a>
+        </div>
+    </div>
+
+    {% if orders %}
+    <div class="orders-list">
+        {% for ord in orders %}
+        <div class="card order-card" id="order-card-{{ ord.order_number }}">
+            <div class="order-card-header flex-between">
+                <div class="order-info-left">
+                    <span class="order-num-badge">#{{ ord.order_number }}</span>
+                    <span class="order-date-text"><i class="fa-regular fa-calendar"></i> Placed on {{ ord.created_at|slice:":10" }}</span>
+                </div>
+                <div class="order-status-right">
+                    <span class="badge {% if ord.status == 'Delivered' %}badge-success{% elif ord.status == 'Out for Delivery' %}badge-warning live-pulse{% else %}badge-info{% endif %}">
+                        {% if ord.status == 'Out for Delivery' %}<i class="fa-solid fa-truck-fast"></i>{% endif %} {{ ord.status }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="order-card-body">
+                <div class="order-items-preview">
+                    {% for item in ord.items %}
+                    <div class="order-item-chip">
+                        <span class="item-name">{{ item.name }}</span>
+                        <span class="item-qty">x{{ item.quantity }}</span>
+                        <span class="item-price">₹{{ item.price|floatformat:2 }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="order-card-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">Total Amount:</span>
+                        <strong class="text-teal">₹{{ ord.total_amount|floatformat:2 }}</strong>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Payment Mode:</span>
+                        <span>{{ ord.payment_method }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Delivery Address:</span>
+                        <span class="address-snippet">{{ ord.delivery_address|truncatechars:45 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="order-card-footer flex-between">
+                <div class="footer-left">
+                    {% if ord.status == 'Out for Delivery' %}
+                    <span class="text-primary font-medium">
+                        <i class="fa-solid fa-clock"></i> Estimated Delivery: <strong>{{ ord.estimated_delivery }}</strong>
+                    </span>
+                    {% else %}
+                    <span class="text-muted">Delivered to {{ ord.user_name }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="order-actions-btn-group">
+                    <button class="btn btn-outline btn-sm" onclick="reorder('{{ ord.order_number }}')">
+                        <i class="fa-solid fa-arrows-rotate"></i> Reorder Medicines
+                    </button>
+                    <a href="{% url 'order_detail' ord.order_number %}" class="btn btn-outline btn-sm">
+                        <i class="fa-solid fa-file-invoice"></i> Invoice & Details
+                    </a>
+                    {% if ord.status == 'Out for Delivery' %}
+                    <a href="{% url 'tracking' %}?order={{ ord.order_number }}" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-location-crosshairs"></i> Live GPS Track
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card empty-orders-box">
+        <div class="empty-icon"><i class="fa-solid fa-box-open"></i></div>
+        <h3>No Orders Found</h3>
+        <p>You haven't placed any medicine orders yet.</p>
+        <a href="{% url 'medicines' %}" class="btn btn-primary">Start Shopping</a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function reorder(orderNum) {
+    if (!confirm(`Reorder all medicines from order #${orderNum}?`)) return;
+
+    fetch('/api/orders/reorder/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ order_id: orderNum })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.href = '{% url "cart" %}';
+        } else {
+            alert(data.error || 'Failed to reorder medicines.');
+        }
+    });
+}
+</script>
+{% endblock %}

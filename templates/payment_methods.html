@@ -1,0 +1,452 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Methods & Instant QR Code – MedConnect{% endblock %}
+
+{% block extra_css %}
+<style>
+.qr-showcase-card {
+    background: linear-gradient(135deg, #06282a 0%, #093c3f 50%, #0d9488 100%);
+    color: #ffffff;
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 25px -5px rgba(6, 40, 42, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+.qr-showcase-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 2rem;
+    align-items: center;
+}
+@media (max-width: 768px) {
+    .qr-showcase-grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+}
+.qr-image-container {
+    background: #ffffff;
+    padding: 1rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #14b8a6;
+}
+.qr-code-img {
+    width: 190px;
+    height: 190px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+.qr-brand-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #072a2a;
+    font-size: 0.78rem;
+    font-weight: 800;
+    margin-top: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.qr-details-content h3 {
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.02em;
+}
+.qr-details-content p {
+    color: #99f6e4;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+}
+.vpa-pill-box {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 0.65rem 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+.vpa-pill-box code {
+    color: #5eead4;
+    font-size: 1.05rem;
+    font-weight: 700;
+    font-family: monospace;
+}
+.upi-apps-icons {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+.app-badge {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.qr-modal-canvas {
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="payment-methods-page-wrapper">
+
+    <div class="page-top-bar">
+        <div>
+            <h2>Saved Payment Methods & Instant QR Code</h2>
+            <p>Scan the merchant QR code using any UPI app or manage credit cards and digital instruments securely.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline" onclick="openQrModal('medconnect.health@okhdfcbank', 'MedConnect Healthcare Merchant')">
+                <i class="fa-solid fa-qrcode text-teal"></i> Show Fullscreen QR
+            </button>
+            <button class="btn btn-primary" onclick="openPaymentModal()">
+                <i class="fa-solid fa-plus"></i> Add Payment Method
+            </button>
+        </div>
+    </div>
+
+    <!-- 1. FEATURED INSTANT UPI & QR CODE PAYMENT SECTION -->
+    <div class="qr-showcase-card">
+        <div class="qr-showcase-grid">
+            
+            <!-- QR Code Box -->
+            <div class="qr-image-container">
+                <img id="mainMerchantQr" 
+                     src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=upi%3A%2F%2Fpay%3Fpa%3Dmedconnect.health%40okhdfcbank%26pn%3DMedConnect%2520Healthcare%26cu%3DINR" 
+                     alt="MedConnect UPI QR Code" 
+                     class="qr-code-img"
+                     onerror="renderSvgQrFallback(this, 'medconnect.health@okhdfcbank')">
+                <div class="qr-brand-label">
+                    <i class="fa-solid fa-shield-halved text-teal"></i> Verified Merchant QR
+                </div>
+            </div>
+
+            <!-- QR Details & Quick Actions -->
+            <div class="qr-details-content">
+                <span class="badge badge-teal mb-2"><i class="fa-solid fa-bolt"></i> Instant 0% Convenience Fee</span>
+                <h3>Scan & Pay with Any UPI App</h3>
+                <p>Point your mobile camera or open Google Pay, PhonePe, Paytm, or BHIM to scan the QR code and authorize instant prescription payment.</p>
+
+                <div class="vpa-pill-box">
+                    <span class="text-white-50 small">Merchant VPA:</span>
+                    <code id="merchantVpa">medconnect.health@okhdfcbank</code>
+                    <button class="btn btn-sm btn-outline text-white border-white" onclick="copyVpa('medconnect.health@okhdfcbank')">
+                        <i class="fa-regular fa-copy"></i> Copy
+                    </button>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button class="btn btn-light btn-sm font-bold text-teal" onclick="simulateQrPayment()">
+                        <i class="fa-solid fa-circle-check text-success"></i> Simulate Instant Scan & Pay
+                    </button>
+                    <a href="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=upi%3A%2F%2Fpay%3Fpa%3Dmedconnect.health%40okhdfcbank%26pn%3DMedConnect%2520Healthcare" target="_blank" download="MedConnect-UPI-QR.png" class="btn btn-outline text-white border-white btn-sm">
+                        <i class="fa-solid fa-download"></i> Download QR Standee
+                    </a>
+                </div>
+
+                <div class="upi-apps-icons">
+                    <span class="text-white-50 small">Accepted via:</span>
+                    <span class="app-badge"><i class="fa-brands fa-google-pay"></i> Google Pay</span>
+                    <span class="app-badge"><i class="fa-solid fa-mobile-screen"></i> PhonePe</span>
+                    <span class="app-badge"><i class="fa-solid fa-wallet"></i> Paytm</span>
+                    <span class="app-badge"><i class="fa-solid fa-building-columns"></i> BHIM UPI</span>
+                    <span class="app-badge"><i class="fa-brands fa-amazon-pay"></i> Amazon Pay</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 2. SAVED METHODS GRID -->
+    <h3 class="mb-3 font-bold"><i class="fa-solid fa-wallet text-teal"></i> Your Saved Cards & UPI Accounts</h3>
+    <div class="payment-cards-grid">
+        {% for pm in payment_methods %}
+        <div class="card payment-card-box" id="pm-card-{{ pm.id }}">
+            <div class="pm-top flex-between">
+                <div class="pm-brand-badge">
+                    {% if pm.method_type == 'card' %}
+                    <i class="fa-brands fa-cc-visa text-primary fa-2x"></i>
+                    {% elif pm.method_type == 'upi' %}
+                    <i class="fa-solid fa-qrcode text-success fa-2x"></i>
+                    {% else %}
+                    <i class="fa-solid fa-money-bill-wave text-amber fa-2x"></i>
+                    {% endif %}
+                </div>
+                {% if pm.is_default %}
+                <span class="badge badge-success"><i class="fa-solid fa-check"></i> Default</span>
+                {% endif %}
+            </div>
+
+            <div class="pm-body mt-3">
+                {% if pm.method_type == 'card' %}
+                <h4 class="card-number-masked">{{ pm.card_number_masked }}</h4>
+                <div class="card-meta-row flex-between text-muted small mt-2">
+                    <span>Cardholder: <strong>{{ pm.holder_name }}</strong></span>
+                    <span>Expires: <strong>{{ pm.expiry }}</strong></span>
+                </div>
+                {% elif pm.method_type == 'upi' %}
+                <h4>{{ pm.upi_id }}</h4>
+                <div class="text-muted small mt-1">Verified UPI Virtual Payment Address</div>
+                <div class="mt-2">
+                    <button class="btn btn-outline btn-sm text-teal" onclick="openQrModal('{{ pm.upi_id }}', '{{ pm.upi_id }}')">
+                        <i class="fa-solid fa-qrcode"></i> View Scannable QR
+                    </button>
+                </div>
+                {% else %}
+                <h4>Cash on Delivery (COD)</h4>
+                <div class="text-muted small mt-1">Pay upon doorstep package arrival</div>
+                {% endif %}
+            </div>
+
+            <div class="pm-footer flex-between mt-3 pt-3 border-top">
+                <span class="secure-badge"><i class="fa-solid fa-lock text-success"></i> PCI-DSS Encrypted</span>
+                <button class="btn-icon text-danger" onclick="deletePaymentMethod('{{ pm.id }}')" title="Remove">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card empty-state-box col-span-full text-center py-5">
+            <i class="fa-solid fa-credit-card fa-3x text-muted mb-3"></i>
+            <h4>No Payment Methods Stored</h4>
+            <p class="text-muted">Save your cards or UPI for swift 1-click checkout.</p>
+            <button class="btn btn-primary" onclick="openPaymentModal()">Add Payment Method</button>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- MODAL: FULLSCREEN SCANNER QR CODE -->
+<div class="custom-modal" id="qrModal" style="display: none;">
+    <div class="modal-backdrop" onclick="closeQrModal()"></div>
+    <div class="modal-dialog">
+        <div class="modal-content card">
+            <div class="modal-header flex-between">
+                <h4><i class="fa-solid fa-qrcode text-teal"></i> Scan to Pay via UPI</h4>
+                <button class="modal-close" onclick="closeQrModal()">&times;</button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <div class="qr-modal-canvas">
+                    <img id="modalQrImg" src="" alt="UPI QR Code" style="width: 220px; height: 220px; border-radius: 8px;">
+                    <div class="mt-3">
+                        <h4 id="modalQrTitle" class="mb-1">MedConnect Healthcare</h4>
+                        <div class="badge badge-teal" id="modalQrVpa">medconnect.health@okhdfcbank</div>
+                    </div>
+                    <p class="text-muted small mt-2">Compatible with Google Pay, PhonePe, Paytm, BHIM & all UPI banking applications.</p>
+                </div>
+            </div>
+            <div class="modal-footer flex-between">
+                <button class="btn btn-outline" onclick="copyVpa(document.getElementById('modalQrVpa').textContent)">
+                    <i class="fa-regular fa-copy"></i> Copy UPI ID
+                </button>
+                <button class="btn btn-primary" onclick="closeQrModal()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ADD PAYMENT MODAL -->
+<div class="custom-modal" id="paymentModal" style="display: none;">
+    <div class="modal-backdrop" onclick="closePaymentModal()"></div>
+    <div class="modal-dialog">
+        <div class="modal-content card">
+            <div class="modal-header flex-between">
+                <h4><i class="fa-solid fa-credit-card text-teal"></i> Add New Payment Method</h4>
+                <button class="modal-close" onclick="closePaymentModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label class="form-label">Payment Instrument Type</label>
+                    <select id="pmType" class="form-input" onchange="togglePmFields(this.value)">
+                        <option value="card" selected>Credit / Debit Card</option>
+                        <option value="upi">UPI ID & QR Code (Google Pay, PhonePe, BHIM)</option>
+                        <option value="cod">Cash on Delivery (COD)</option>
+                    </select>
+                </div>
+
+                <div id="cardFields">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Cardholder Name *</label>
+                        <input type="text" id="pmHolder" class="form-input" placeholder="Dr. Alex Morgan">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Card Number *</label>
+                        <input type="text" id="pmNumber" class="form-input" placeholder="4242 •••• •••• 4242" maxlength="19">
+                    </div>
+                    <div class="form-row mb-3">
+                        <div class="form-group flex-1">
+                            <label class="form-label">Expiry (MM/YY) *</label>
+                            <input type="text" id="pmExpiry" class="form-input" placeholder="12/28" maxlength="5">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label class="form-label">CVV / CVC *</label>
+                            <input type="password" id="pmCvv" class="form-input" placeholder="•••" maxlength="4">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="upiFields" style="display: none;">
+                    <div class="form-group mb-3">
+                        <label class="form-label">UPI ID / Virtual Payment Address *</label>
+                        <input type="text" id="pmUpiId" class="form-input" placeholder="username@okhdfcbank" oninput="updateLivePreviewQr(this.value)">
+                    </div>
+                    <!-- Live QR preview for entered UPI -->
+                    <div class="card p-3 text-center bg-light" id="liveUpiQrPreviewBox" style="display: none;">
+                        <span class="text-muted small mb-2 d-block">Generated QR Preview:</span>
+                        <img id="liveUpiQrImg" src="" style="width: 140px; height: 140px; margin: 0 auto; border-radius: 8px;">
+                        <small class="text-teal font-bold d-block mt-2" id="liveUpiVpaLabel"></small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closePaymentModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitPaymentMethod()">Save Payment Method</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openPaymentModal() {
+    document.getElementById('paymentModal').style.display = 'block';
+}
+function closePaymentModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+}
+
+function openQrModal(vpa, title) {
+    document.getElementById('modalQrTitle').textContent = title || 'MedConnect Healthcare';
+    document.getElementById('modalQrVpa').textContent = vpa;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`upi://pay?pa=${vpa}&pn=MedConnect%20Pharmacy&cu=INR`)}`;
+    document.getElementById('modalQrImg').src = qrUrl;
+    document.getElementById('qrModal').style.display = 'block';
+}
+
+function closeQrModal() {
+    document.getElementById('qrModal').style.display = 'none';
+}
+
+function copyVpa(vpaText) {
+    navigator.clipboard.writeText(vpaText).then(() => {
+        alert(`UPI ID "${vpaText}" copied to clipboard!`);
+    }).catch(() => {
+        prompt('Copy UPI ID:', vpaText);
+    });
+}
+
+function simulateQrPayment() {
+    alert('Simulating QR Scan & Authorization...\n\nPayment verified successfully! Instant confirmation received from payment gateway.');
+}
+
+function togglePmFields(val) {
+    document.getElementById('cardFields').style.display = (val === 'card') ? 'block' : 'none';
+    document.getElementById('upiFields').style.display = (val === 'upi') ? 'block' : 'none';
+}
+
+function updateLivePreviewQr(vpa) {
+    const box = document.getElementById('liveUpiQrPreviewBox');
+    const img = document.getElementById('liveUpiQrImg');
+    const lbl = document.getElementById('liveUpiVpaLabel');
+    if (vpa && vpa.includes('@')) {
+        box.style.display = 'block';
+        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(`upi://pay?pa=${vpa}&pn=MedConnect%20User&cu=INR`)}`;
+        lbl.textContent = vpa;
+    } else {
+        box.style.display = 'none';
+    }
+}
+
+function submitPaymentMethod() {
+    const type = document.getElementById('pmType').value;
+    const body = { method_type: type };
+
+    if (type === 'card') {
+        body.holder_name = document.getElementById('pmHolder').value.trim();
+        body.card_number = document.getElementById('pmNumber').value.trim();
+        body.expiry = document.getElementById('pmExpiry').value.trim();
+        if (!body.card_number) {
+            alert('Please enter card number.');
+            return;
+        }
+    } else if (type === 'upi') {
+        body.upi_id = document.getElementById('pmUpiId').value.trim();
+        if (!body.upi_id) {
+            alert('Please enter UPI ID.');
+            return;
+        }
+    }
+
+    fetch('/api/payment-methods/save/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify(body)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert(data.error || 'Failed to save payment method.');
+        }
+    });
+}
+
+function deletePaymentMethod(pmId) {
+    if (!confirm('Are you sure you want to remove this payment method?')) return;
+
+    fetch('/api/payment-methods/delete/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ payment_method_id: pmId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const card = document.getElementById(`pm-card-${pmId}`);
+            if (card) card.remove();
+        }
+    });
+}
+
+function renderSvgQrFallback(imgElement, vpa) {
+    // Elegant SVG fallback pattern if external QR generator has no internet connectivity
+    imgElement.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="white"/><rect x="20" y="20" width="50" height="50" fill="%230d9488"/><rect x="30" y="30" width="30" height="30" fill="white"/><rect x="37" y="37" width="16" height="16" fill="%230d9488"/><rect x="130" y="20" width="50" height="50" fill="%230d9488"/><rect x="140" y="30" width="30" height="30" fill="white"/><rect x="147" y="37" width="16" height="16" fill="%230d9488"/><rect x="20" y="130" width="50" height="50" fill="%230d9488"/><rect x="30" y="140" width="30" height="30" fill="white"/><rect x="37" y="147" width="16" height="16" fill="%230d9488"/><rect x="90" y="20" width="20" height="20" fill="%23072a2a"/><rect x="90" y="60" width="20" height="40" fill="%23072a2a"/><rect x="130" y="90" width="50" height="20" fill="%23072a2a"/><rect x="90" y="120" width="30" height="20" fill="%23072a2a"/><rect x="130" y="130" width="20" height="50" fill="%23072a2a"/><rect x="160" y="150" width="20" height="30" fill="%23072a2a"/><text x="100" y="195" font-family="sans-serif" font-size="10" text-anchor="middle" fill="%230d9488">SCAN WITH UPI APP</text></svg>`;
+}
+</script>
+{% endblock %}

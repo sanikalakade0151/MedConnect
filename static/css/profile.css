@@ -1,0 +1,119 @@
+/* ==========================================================================
+   MEDCONNECT – User Profile & Medical Tagging (profile.css)
+   ========================================================================== */
+
+.profile-page-wrapper {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.profile-layout-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 1.75rem;
+    align-items: start;
+}
+
+@media (max-width: 992px) {
+    .profile-layout-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Sidebar Profile Card */
+.profile-sidebar-col .card {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+.profile-avatar-large {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%);
+    color: #ffffff;
+    font-size: 2.4rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0.5rem auto 1rem;
+    box-shadow: 0 8px 20px rgba(13, 148, 136, 0.3);
+    border: 4px solid #ffffff;
+    transition: transform 0.2s ease;
+}
+
+.profile-avatar-large:hover {
+    transform: scale(1.05);
+}
+
+.profile-sidebar-col h3 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.quick-medical-summary {
+    background: #f8fafc;
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.med-tag-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.88rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed var(--border-color);
+}
+
+.med-tag-item:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+/* Main Profile Form Card */
+.profile-main-col .card {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+.profile-main-col .card-header {
+    background: #ffffff;
+    border-bottom: 1px solid var(--border-color);
+    padding: 1.25rem 1.75rem;
+}
+
+.profile-main-col .card-header h4 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.profile-main-col .card-body {
+    padding: 1.75rem;
+}
+
+.form-hint {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+}
+
+.form-input[readonly] {
+    background-color: #f1f5f9;
+    color: #64748b;
+    cursor: not-allowed;
+    border-color: #e2e8f0;
+}

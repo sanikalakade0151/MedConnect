@@ -1,0 +1,631 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Medicine Reminders & Smart Bell Alarm – MedConnect{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/reminders.css' %}?v=2.5">
+<style>
+.bell-ring-animation {
+    display: inline-block;
+    animation: bellSwing 0.8s infinite ease-in-out;
+}
+@keyframes bellSwing {
+    0% { transform: rotate(0); }
+    20% { transform: rotate(15deg); }
+    40% { transform: rotate(-15deg); }
+    60% { transform: rotate(10deg); }
+    80% { transform: rotate(-10deg); }
+    100% { transform: rotate(0); }
+}
+.sound-wave-bars {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 24px;
+}
+.wave-bar {
+    width: 4px;
+    height: 8px;
+    background: #0d9488;
+    border-radius: 2px;
+    animation: soundWave 0.8s infinite ease-in-out alternate;
+}
+.wave-bar:nth-child(2) { animation-delay: 0.15s; }
+.wave-bar:nth-child(3) { animation-delay: 0.3s; }
+.wave-bar:nth-child(4) { animation-delay: 0.45s; }
+.wave-bar:nth-child(5) { animation-delay: 0.6s; }
+@keyframes soundWave {
+    0% { height: 6px; background: #0d9488; }
+    100% { height: 24px; background: #f59e0b; }
+}
+.live-clock-badge {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.4rem 0.8rem;
+    font-family: monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.btn-ring-now {
+    color: #f59e0b;
+    border-color: #f59e0b;
+    background: transparent;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+.btn-ring-now:hover {
+    background: #f59e0b;
+    color: #ffffff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reminders-page-wrapper">
+
+    <div class="page-top-bar">
+        <div>
+            <h2>Medicine Schedule & Smart Bell Alarm</h2>
+            <p>Set timely alerts for your daily prescriptions with authentic bell chimes that ring automatically at scheduled times.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="live-clock-badge" id="systemLiveClock" title="Current Device Time">
+                <i class="fa-regular fa-clock text-teal"></i> <span id="liveClockDisplay">--:--:--</span>
+            </div>
+            <button class="btn btn-outline text-amber" onclick="testBellChimeSound()">
+                <i class="fa-solid fa-bell fa-shake"></i> Test Bell Ring
+            </button>
+            <button class="btn btn-outline text-teal" onclick="setQuickOneMinuteReminder()">
+                <i class="fa-solid fa-stopwatch"></i> Quick 1-Min Alarm Test
+            </button>
+            <div class="reminders-stat-badges">
+                <span class="badge badge-warning"><i class="fa-solid fa-clock"></i> <span id="pendingCountDisplay">{{ pending_count }}</span> Pending</span>
+                <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> <span id="takenCountDisplay">{{ taken_count }}</span> Taken</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="reminders-grid-layout">
+        <!-- LEFT: CREATE NEW REMINDER -->
+        <div class="reminders-form-col">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fa-solid fa-bell-plus text-teal"></i> Schedule New Reminder</h4>
+                </div>
+                <div class="card-body">
+                    <form id="createReminderForm">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Medicine Name *</label>
+                            <input type="text" id="remMedName" class="form-input" placeholder="E.g., Metformin, Atorvastatin, Pan 40" required>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label">Dosage Specification</label>
+                            <input type="text" id="remDosage" class="form-input" placeholder="E.g., 1 tablet (500mg), 10ml syrup">
+                        </div>
+
+                        <div class="form-row mb-3">
+                            <div class="form-group flex-1">
+                                <label class="form-label">Reminder Time *</label>
+                                <input type="time" id="remTime" class="form-input" value="09:00" required>
+                            </div>
+                            <div class="form-group flex-1">
+                                <label class="form-label">Category</label>
+                                <select id="remCategory" class="form-input">
+                                    <option value="Diabetes Care">Diabetes Care</option>
+                                    <option value="Heart Care">Heart Care</option>
+                                    <option value="Pain Relief">Pain Relief</option>
+                                    <option value="Vitamins">Vitamins</option>
+                                    <option value="General" selected>General</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label">Instruction / Clinical Note</label>
+                            <input type="text" id="remInstruction" class="form-input" placeholder="E.g., Take with warm water after dinner">
+                        </div>
+
+                        <button type="button" class="btn btn-primary w-100 btn-lg" onclick="saveNewReminder()">
+                            <i class="fa-solid fa-calendar-check"></i> Save Medicine Reminder
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ADHERENCE BENEFIT CARD -->
+            <div class="card mt-3 adherence-card">
+                <div class="adherence-icon"><i class="fa-solid fa-bell text-amber bell-ring-animation"></i></div>
+                <h5>Audio Alarm Bell Active</h5>
+                <p>When the clock reaches your scheduled dose time, an authentic hospital chime will ring loudly on your speakers with a take-medicine prompt.</p>
+                <div class="sound-wave-bars mt-2">
+                    <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: UPCOMING REMINDERS LIST -->
+        <div class="reminders-list-col">
+            <div class="card">
+                <div class="card-header flex-between">
+                    <h4><i class="fa-solid fa-calendar-day"></i> Your Medication Schedule</h4>
+                    <span class="text-teal small font-bold"><i class="fa-solid fa-satellite-dish text-success"></i> Bell Monitor Active</span>
+                </div>
+                <div class="card-body">
+                    <div class="reminders-full-list" id="remindersFullList">
+                        {% for rem in reminders %}
+                        <div class="reminder-card-item {% if rem.is_taken %}taken{% endif %}" 
+                             id="remCard-{{ rem.id }}"
+                             data-rem-id="{{ rem.id }}"
+                             data-time="{{ rem.scheduled_time }}"
+                             data-name="{{ rem.medicine_name }}"
+                             data-dosage="{{ rem.dosage }}"
+                             data-instruction="{{ rem.instruction }}"
+                             data-taken="{% if rem.is_taken %}true{% else %}false{% endif %}">
+                            
+                            <div class="rem-time-badge">
+                                <i class="fa-solid fa-clock"></i>
+                                <span>{{ rem.scheduled_time }}</span>
+                            </div>
+
+                            <div class="rem-main-info">
+                                <div class="rem-title-row">
+                                    <h4 class="rem-name">{{ rem.medicine_name }}</h4>
+                                    <span class="rem-cat-tag">{{ rem.category|default:"Prescription" }}</span>
+                                </div>
+                                <div class="rem-dosage-desc">
+                                    <i class="fa-solid fa-capsules text-teal"></i> {{ rem.dosage }} &bull; {{ rem.instruction }}
+                                </div>
+                            </div>
+
+                            <div class="rem-action-buttons d-flex align-items-center gap-2">
+                                <button class="btn-ring-now" onclick="ringReminderDirectly('{{ rem.medicine_name }}', '{{ rem.dosage }}', '{{ rem.scheduled_time }}', '{{ rem.instruction }}', '{{ rem.id }}')" title="Test Bell Ring for this medicine">
+                                    <i class="fa-solid fa-bell"></i> Ring Bell
+                                </button>
+                                <button class="btn-mark-taken {% if rem.is_taken %}is-taken{% endif %}" onclick="toggleTaken('{{ rem.id }}', this)">
+                                    <i class="fa-solid {% if rem.is_taken %}fa-circle-check{% else %}fa-circle{% endif %}"></i>
+                                    <span>{% if rem.is_taken %}Taken{% else %}Mark as Taken{% endif %}</span>
+                                </button>
+                                <button class="btn-icon text-muted" onclick="deleteReminder('{{ rem.id }}')" title="Delete Reminder">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state-box text-center py-5">
+                            <i class="fa-solid fa-bell-slash fa-3x text-muted mb-3"></i>
+                            <h4>No Reminders Scheduled</h4>
+                            <p class="text-muted">Use the form on the left to add your daily medicine schedules.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- MEDICATION REMINDER BELL ALARM MODAL -->
+<div id="reminderAlarmModal" class="custom-modal" style="display: none; z-index: 99999;">
+    <div class="modal-backdrop" onclick="snoozeAlarm()"></div>
+    <div class="modal-dialog" style="max-width: 450px;">
+        <div class="modal-content card p-4 text-center" style="border: 2.5px solid #0d9488; box-shadow: 0 25px 50px -12px rgba(13, 148, 136, 0.45); border-radius: 18px;">
+            <div class="bell-ring-animation mb-3">
+                <i class="fa-solid fa-bell fa-3x" style="color: #f59e0b; text-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);"></i>
+            </div>
+            <span class="badge badge-warning mb-2" style="font-size: 0.85rem; padding: 0.35rem 0.85rem;">
+                <i class="fa-solid fa-clock"></i> TIME FOR YOUR MEDICATION
+            </span>
+            <h3 id="modalAlarmMedName" class="mb-1" style="font-weight: 800; color: #072a2a; font-size: 1.45rem;">Metformin 500mg SR</h3>
+            <div id="modalAlarmDosage" class="text-teal font-bold mb-2">1 Tablet &bull; Sustained Release</div>
+            <p id="modalAlarmInstruction" class="text-muted small mb-3">Take with warm water after dinner as advised by physician.</p>
+            
+            <div class="sound-wave-bars mb-4">
+                <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline flex-1" onclick="snoozeAlarm()">
+                    <i class="fa-solid fa-moon"></i> Snooze 5 Mins
+                </button>
+                <button class="btn btn-primary flex-1" id="modalAlarmTakeBtn" onclick="confirmTakeFromAlarm()">
+                    <i class="fa-solid fa-circle-check"></i> Mark as Taken
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentRingingReminderId = null;
+const rungTimestamps = new Set(); // Prevent repeated firing in the exact same minute
+
+let activeAudioCtx = null;
+let activeBellInterval = null;
+let activeOscillators = [];
+
+// Stop active ringing sound immediately
+function stopMedicationBellChime() {
+    if (activeBellInterval) {
+        clearInterval(activeBellInterval);
+        activeBellInterval = null;
+    }
+    if (activeOscillators && activeOscillators.length) {
+        activeOscillators.forEach(osc => {
+            try {
+                osc.stop();
+                osc.disconnect();
+            } catch(e) {}
+        });
+        activeOscillators = [];
+    }
+    if (activeAudioCtx) {
+        try {
+            activeAudioCtx.close();
+        } catch(e) {}
+        activeAudioCtx = null;
+    }
+    if ('vibrate' in navigator) {
+        navigator.vibrate(0);
+    }
+    if (window.stopMedicationBellChime && window.stopMedicationBellChime !== stopMedicationBellChime) {
+        try { window.stopMedicationBellChime(); } catch(e) {}
+    }
+}
+
+// Web Audio API Dual-Tone Hospital Bell Chime Synthesizer
+function playMedicationBellChime(loopRepeat = false) {
+    stopMedicationBellChime(); // Clear any running audio first
+
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        activeAudioCtx = new AudioCtx();
+        if (activeAudioCtx.state === 'suspended') {
+            activeAudioCtx.resume();
+        }
+
+        function playDingDongCycle() {
+            if (!activeAudioCtx || activeAudioCtx.state === 'closed') return;
+            const ctx = activeAudioCtx;
+
+            function playTone(freq, startTime, duration, gainLevel) {
+                const osc = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, startTime);
+
+                // Bell exponential envelope
+                gainNode.gain.setValueAtTime(0.001, startTime);
+                gainNode.gain.linearRampToValueAtTime(gainLevel, startTime + 0.02);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+                // Harmonic overtone for metallic brass ring
+                const overtone = ctx.createOscillator();
+                const overtoneGain = ctx.createGain();
+                overtone.type = 'sine';
+                overtone.frequency.setValueAtTime(freq * 2.02, startTime);
+                overtoneGain.gain.setValueAtTime(0.001, startTime);
+                overtoneGain.gain.linearRampToValueAtTime(gainLevel * 0.35, startTime + 0.015);
+                overtoneGain.gain.exponentialRampToValueAtTime(0.0001, startTime + (duration * 0.65));
+
+                osc.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                overtone.connect(overtoneGain);
+                overtoneGain.connect(ctx.destination);
+
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+                overtone.start(startTime);
+                overtone.stop(startTime + duration);
+
+                activeOscillators.push(osc, overtone);
+            }
+
+            const t = ctx.currentTime;
+            // First Ding-Dong (880Hz -> 1174.66Hz)
+            playTone(880, t, 1.3, 0.5);
+            playTone(1174.66, t + 0.28, 1.6, 0.6);
+
+            // Second Ding-Dong after 1.25s
+            playTone(880, t + 1.25, 1.3, 0.5);
+            playTone(1174.66, t + 1.53, 1.8, 0.6);
+
+            // Vibrate mobile devices if supported
+            if ('vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200, 100, 400]);
+            }
+        }
+
+        playDingDongCycle();
+
+        if (loopRepeat) {
+            activeBellInterval = setInterval(() => {
+                if (!activeAudioCtx || activeAudioCtx.state === 'closed') {
+                    clearInterval(activeBellInterval);
+                    return;
+                }
+                playDingDongCycle();
+            }, 3200);
+        }
+    } catch (e) {
+        console.warn('Audio chime triggered:', e);
+    }
+}
+
+// Show the visual alarm modal and ring the bell continuously until taken
+function triggerReminderAlarmModal(name, dosage, time, instruction, remId) {
+    currentRingingReminderId = remId;
+    document.getElementById('modalAlarmMedName').textContent = name;
+    document.getElementById('modalAlarmDosage').textContent = dosage || 'Standard Dosage';
+    document.getElementById('modalAlarmInstruction').textContent = instruction || 'Take as prescribed by doctor.';
+    document.getElementById('reminderAlarmModal').style.display = 'block';
+
+    // Ring the audio bell chime continuously until user marks taken or snoozes
+    playMedicationBellChime(true);
+}
+
+function testBellChimeSound() {
+    triggerReminderAlarmModal(
+        'Metformin 500mg SR (Test Alarm)',
+        '1 Tablet after dinner',
+        'Now',
+        'Testing the MedConnect reminder bell ring tone.',
+        'test-id'
+    );
+}
+
+function ringReminderDirectly(name, dosage, time, instruction, remId) {
+    triggerReminderAlarmModal(name, dosage, time, instruction, remId);
+}
+
+function snoozeAlarm() {
+    stopMedicationBellChime();
+    document.getElementById('reminderAlarmModal').style.display = 'none';
+    alert('Alarm snoozed for 5 minutes. Bell will chime again shortly!');
+    setTimeout(() => {
+        playMedicationBellChime(true);
+    }, 5 * 60 * 1000);
+}
+
+function confirmTakeFromAlarm() {
+    stopMedicationBellChime();
+    document.getElementById('reminderAlarmModal').style.display = 'none';
+    if (currentRingingReminderId && currentRingingReminderId !== 'test-id') {
+        const cardBtn = document.querySelector(`#remCard-${currentRingingReminderId} .btn-mark-taken`);
+        toggleTaken(currentRingingReminderId, cardBtn);
+    } else {
+        updateReminderCountsUI(true);
+        alert('Medicine marked as taken! Dose recorded in adherence log.');
+    }
+}
+
+function setQuickOneMinuteReminder() {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 1);
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const quickTime = `${hh}:${mm}`;
+
+    document.getElementById('remMedName').value = 'Vitamin C 500mg (Auto-Test)';
+    document.getElementById('remDosage').value = '1 Chewable Tablet';
+    document.getElementById('remTime').value = quickTime;
+    document.getElementById('remInstruction').value = 'Chew after water (1-minute test alert)';
+    
+    saveNewReminder();
+}
+
+// Helper to normalize time strings into "HH:MM" 24-hr format
+function normalizeTimeTo24Hr(timeStr) {
+    if (!timeStr) return '';
+    timeStr = timeStr.trim();
+    // Case 1: "09:00"
+    if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
+        const parts = timeStr.split(':');
+        return `${String(parts[0]).padStart(2, '0')}:${parts[1]}`;
+    }
+    // Case 2: "09:00 AM" or "09:00 PM"
+    const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (match) {
+        let hrs = parseInt(match[1], 10);
+        const mins = match[2];
+        const ampm = match[3].toUpperCase();
+        if (ampm === 'PM' && hrs < 12) hrs += 12;
+        if (ampm === 'AM' && hrs === 12) hrs = 0;
+        return `${String(hrs).padStart(2, '0')}:${mins}`;
+    }
+    return timeStr;
+}
+
+// Continuous Real-Time Schedule Clock & Bell Monitor (Checks every 4 seconds)
+function startScheduleMonitor() {
+    function tick() {
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const ss = String(now.getSeconds()).padStart(2, '0');
+        const currentTime24 = `${hh}:${mm}`;
+
+        // Update live clock badge
+        const clockEl = document.getElementById('liveClockDisplay');
+        if (clockEl) {
+            clockEl.textContent = `${hh}:${mm}:${ss}`;
+        }
+
+        // Check each reminder card
+        document.querySelectorAll('.reminder-card-item').forEach(card => {
+            const isTaken = card.getAttribute('data-taken') === 'true';
+            if (isTaken) return; // Skip already taken doses
+
+            const rawTime = card.getAttribute('data-time');
+            const targetTime24 = normalizeTimeTo24Hr(rawTime);
+            const remId = card.getAttribute('data-rem-id');
+
+            // If current system minute matches scheduled minute
+            if (currentTime24 === targetTime24) {
+                const ringKey = `${remId}_${currentTime24}`;
+                if (!rungTimestamps.has(ringKey)) {
+                    rungTimestamps.add(ringKey);
+                    const name = card.getAttribute('data-name');
+                    const dosage = card.getAttribute('data-dosage');
+                    const instruction = card.getAttribute('data-instruction');
+                    triggerReminderAlarmModal(name, dosage, rawTime, instruction, remId);
+                }
+            }
+        });
+    }
+
+    tick();
+    setInterval(tick, 4000);
+}
+
+function saveNewReminder() {
+    const medName = document.getElementById('remMedName').value.trim();
+    const dosage = document.getElementById('remDosage').value.trim();
+    const time = document.getElementById('remTime').value;
+    const category = document.getElementById('remCategory').value;
+    const instruction = document.getElementById('remInstruction').value.trim();
+
+    if (!medName) {
+        alert('Please specify the medicine name.');
+        return;
+    }
+
+    fetch('/api/reminders/add/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+            medicine_name: medName,
+            dosage: dosage,
+            scheduled_time: time,
+            category: category,
+            instruction: instruction
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert(data.error || 'Failed to save reminder.');
+        }
+    });
+}
+
+// Dynamic Counter Function: Minus from pending when taken, add to pending if reverted
+function updateReminderCountsUI(isTakenAction, serverPending, serverTaken) {
+    const pendingEl = document.getElementById('pendingCountDisplay');
+    const takenEl = document.getElementById('takenCountDisplay');
+    if (!pendingEl || !takenEl) return;
+
+    if (serverPending !== undefined && serverTaken !== undefined) {
+        pendingEl.textContent = serverPending;
+        takenEl.textContent = serverTaken;
+        return;
+    }
+
+    let p = parseInt(pendingEl.textContent) || 0;
+    let t = parseInt(takenEl.textContent) || 0;
+
+    if (isTakenAction === true) {
+        // Taken: minus 1 from pending, add 1 to taken
+        p = Math.max(0, p - 1);
+        t = t + 1;
+    } else if (isTakenAction === false) {
+        // Reverted to pending: add 1 to pending, minus 1 from taken
+        p = p + 1;
+        t = Math.max(0, t - 1);
+    }
+    pendingEl.textContent = p;
+    takenEl.textContent = t;
+}
+
+function toggleTaken(remId, btn) {
+    // Instantly switch off bell ring chime and alarm modal if active
+    stopMedicationBellChime();
+    const alarmModal = document.getElementById('reminderAlarmModal');
+    if (alarmModal) alarmModal.style.display = 'none';
+
+    const card = document.getElementById(`remCard-${remId}`);
+    const wasTaken = card ? card.getAttribute('data-taken') === 'true' : false;
+    const willBeTaken = !wasTaken;
+
+    // Optimistic UI updates
+    if (card) {
+        card.setAttribute('data-taken', willBeTaken ? 'true' : 'false');
+        card.classList.toggle('taken', willBeTaken);
+    }
+    if (btn) {
+        btn.classList.toggle('is-taken', willBeTaken);
+        btn.innerHTML = willBeTaken 
+            ? '<i class="fa-solid fa-circle-check"></i> <span>Taken</span>' 
+            : '<i class="fa-solid fa-circle"></i> <span>Mark as Taken</span>';
+    }
+    updateReminderCountsUI(willBeTaken);
+
+    fetch('/api/reminders/toggle/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ reminder_id: remId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // Confirm with server authoritative database counts
+            updateReminderCountsUI(data.is_taken, data.pending_count, data.taken_count);
+        }
+    })
+    .catch(err => {
+        console.error('Toggle reminder error:', err);
+    });
+}
+
+function deleteReminder(remId) {
+    if (!confirm('Are you sure you want to delete this reminder?')) return;
+
+    fetch('/api/reminders/delete/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ reminder_id: remId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const card = document.getElementById(`remCard-${remId}`);
+            if (card) card.remove();
+            if (data.pending_count !== undefined && data.taken_count !== undefined) {
+                updateReminderCountsUI(null, data.pending_count, data.taken_count);
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    startScheduleMonitor();
+});
+</script>
+{% endblock %}
