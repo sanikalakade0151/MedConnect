@@ -28,7 +28,20 @@ def seed_database(force=False):
     offers_col = get_offers_col()
 
     if not force and medicines_col.count_documents({}) > 0:
-        print("[MedConnect Seeder] Database already populated. Skipping seed.")
+        # Guarantee demo user always exists even if medicines were previously seeded
+        demo_email = "demo@medconnect.com"
+        if not users_col.find_one({"email": demo_email}):
+            user_doc = {
+                "name": "Dr. Alex Morgan",
+                "email": demo_email,
+                "password": hash_password("password123"),
+                "phone": "+1 (555) 349-2810",
+                "blood_group": "O+",
+                "allergies": "Penicillin (Mild)",
+                "emergency_contact": "+1 (555) 912-3847 (Sarah Morgan - Spouse)",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            users_col.insert_one(user_doc)
         return
 
     print("[MedConnect Seeder] Populating database with realistic healthcare catalog...")

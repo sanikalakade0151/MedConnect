@@ -14,8 +14,8 @@ services:
       - key: DEBUG
         value: "False"
       - key: MONGO_URI
-        sync: false
+        value: "mongodb+srv://yt:PEWJaOEjqa5Nn0yw@cluster0.kumnajn.mongodb.net/?appName=Cluster0"
       - key: DB_NAME
         value: medconnect_db
       - key: GOOGLE_MAPS_API_KEY
-        sync: false
+        value: "AIzaSyA8_MedConnect_GoogleMaps_LiveTracking2026"

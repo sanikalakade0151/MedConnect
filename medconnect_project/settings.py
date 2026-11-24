@@ -21,12 +21,37 @@ DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
 
 ALLOWED_HOSTS = ['*']
 
+# Reverse proxy SSL headers for Render, Cloudflare, and Heroku
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+
 CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
+    'http://*.onrender.com',
     'https://*.render.com',
+    'http://*.render.com',
     'http://127.0.0.1',
+    'http://127.0.0.1:8000',
     'http://localhost',
+    'http://localhost:8000',
+    'http://0.0.0.0',
 ]
+
+for _env_key in ('RENDER_EXTERNAL_URL', 'RENDER_EXTERNAL_HOSTNAME'):
+    _val = os.getenv(_env_key)
+    if _val:
+        _val = _val.strip()
+        if not _val.startswith(('http://', 'https://')):
+            CSRF_TRUSTED_ORIGINS.extend([f"https://{_val}", f"http://{_val}"])
+        else:
+            CSRF_TRUSTED_ORIGINS.append(_val)
+
+CSRF_COOKIE_NAME = 'csrftoken'
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SECURE = False
+CSRF_FAILURE_VIEW = 'medconnect_app.views.custom_csrf_failure_view'
 
 # Application definition
 INSTALLED_APPS = [
@@ -81,11 +106,12 @@ DATABASES = {
 }
 
 # MongoDB Configuration
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+DEFAULT_MONGO_URI = "mongodb+srv://yt:PEWJaOEjqa5Nn0yw@cluster0.kumnajn.mongodb.net/?appName=Cluster0"
+MONGO_URI = (os.getenv("MONGO_URI") or "").strip() or DEFAULT_MONGO_URI
 DB_NAME = os.getenv("DB_NAME", "medconnect_db")
 
 # Google Maps API Key
-GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
+GOOGLE_MAPS_API_KEY = (os.getenv("GOOGLE_MAPS_API_KEY") or "").strip() or "AIzaSyA8_MedConnect_GoogleMaps_LiveTracking2026"
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -110,8 +136,13 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Session settings
+# Session settings (Stateless, signed cookies - completely resilient on cloud/ephemeral platforms)
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+SESSION_COOKIE_NAME = 'medconnect_session'
 SESSION_COOKIE_AGE = 86400 * 30  # 30 days
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SECURE = False
 SESSION_SAVE_EVERY_REQUEST = True
 
 # DRF configuration

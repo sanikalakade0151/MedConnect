@@ -29,11 +29,22 @@ import pymongo
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from django.conf import settings
 
+DEFAULT_MONGO_URI = "mongodb+srv://yt:PEWJaOEjqa5Nn0yw@cluster0.kumnajn.mongodb.net/?appName=Cluster0"
+
+def _resolve_mongo_uri():
+    try:
+        uri = getattr(settings, 'MONGO_URI', None) or os.getenv("MONGO_URI", "")
+    except Exception:
+        uri = os.getenv("MONGO_URI", "")
+    uri = (uri or "").strip()
+    if not uri or not (uri.startswith("mongodb://") or uri.startswith("mongodb+srv://")):
+        return DEFAULT_MONGO_URI
+    return uri
+
+MONGO_URI = _resolve_mongo_uri()
 try:
-    MONGO_URI = getattr(settings, 'MONGO_URI', os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
     DB_NAME = getattr(settings, 'DB_NAME', os.getenv("DB_NAME", "medconnect_db"))
 except Exception:
-    MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
     DB_NAME = os.getenv("DB_NAME", "medconnect_db")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -353,7 +364,7 @@ class DatabaseManager:
         self.collections = {}
 
         try:
-            client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=800)
+            client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000, connectTimeoutMS=5000)
             client.admin.command('ping')
             self.mongo_client = client
             self.mongo_db = client[DB_NAME]
